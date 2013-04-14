@@ -1680,7 +1680,7 @@ END-INFO-DIR-ENTRY
    This file documents the GNU C Library.
 
    This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-cbaf37cc20b7 - Linaro GCC 2013.03 - Cortex-A8).
+(crosstool-NG hg+default-0fc56e62cecf - Linaro GCC 2013.04 - Cortex-A8).
 
    Copyright (C) 1993-2012 Free Software Foundation, Inc.
 
@@ -1704,7 +1704,7 @@ Main Menu
 *********
 
 This is `The GNU C Library Reference Manual', for Version 2.17
-(crosstool-NG hg+default-cbaf37cc20b7 - Linaro GCC 2013.03 - Cortex-A8)
+(crosstool-NG hg+default-0fc56e62cecf - Linaro GCC 2013.04 - Cortex-A8)
 of the GNU C Library.
 
 * Menu:
