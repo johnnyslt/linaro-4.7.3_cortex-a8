@@ -22,8 +22,8 @@ developing GNU and promoting software freedom."
    This file documents the GNU debugger GDB.
 
    This is the Tenth Edition, of `Debugging with GDB: the GNU
-Source-Level Debugger' for GDB (crosstool-NG hg+default-cbb3e6771ac8 -
-Linaro GCC 2013.08 - Cortex-A8) Version 7.6-2013.05.
+Source-Level Debugger' for GDB (crosstool-NG hg+default-036c00d27d80 -
+Linaro GCC 2013.09 - Cortex-A8) Version 7.6-2013.05.
 
    Copyright (C) 1988-2013 Free Software Foundation, Inc.
 
@@ -47,7 +47,7 @@ Debugging with GDB
 This file describes GDB, the GNU symbolic debugger.
 
    This is the Tenth Edition, for GDB (crosstool-NG
-hg+default-cbb3e6771ac8 - Linaro GCC 2013.08 - Cortex-A8) Version
+hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8) Version
 7.6-2013.05.
 
    Copyright (C) 1988-2013 Free Software Foundation, Inc.
