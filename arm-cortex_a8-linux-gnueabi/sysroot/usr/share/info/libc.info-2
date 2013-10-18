@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -1817,7 +1826,7 @@ you are better off writing a specialized comparison function to compare
 
      `strcasecmp' is derived from BSD.
 
- -- Function: int wcscasecmp (const wchar_t *WS1, const wchar_T *WS2)
+ -- Function: int wcscasecmp (const wchar_t *WS1, const wchar_t *WS2)
      This function is like `wcscmp', except that differences in case are
      ignored.  How uppercase and lowercase characters are related is
      determined by the currently selected locale.  In the standard `"C"'
@@ -2493,7 +2502,7 @@ the header file `string.h'.
      Each byte is treated separately.  The function is not
      locale-dependent.
 
- -- Function: wchar_t * wcstok (wchar_t *NEWSTRING, const char
+ -- Function: wchar_t * wcstok (wchar_t *NEWSTRING, const wchar_t
           *DELIMITERS)
      A string can be split into tokens by making a series of calls to
      the function `wcstok'.
@@ -2673,7 +2682,7 @@ available for multibyte character strings.
      different systems.
 
 
- -- Function: char * basename (char *PATH)
+ -- Function: char * basename (const char *PATH)
      This is the standard XPG defined `basename'. It is similar in
      spirit to the GNU version, but may modify the PATH by removing
      trailing '/' characters.  If the PATH is made up entirely of '/'
@@ -2944,8 +2953,8 @@ error occurs.
      Returns the number of elements in the argz vector ARGZ and
      ARGZ_LEN.
 
- -- Function: void argz_extract (char *ARGZ, size_t ARGZ_LEN, char
-          **ARGV)
+ -- Function: void argz_extract (const char *ARGZ, size_t ARGZ_LEN,
+          char **ARGV)
      The `argz_extract' function converts the argz vector ARGZ and
      ARGZ_LEN into a Unix-style argument vector stored in ARGV, by
      putting pointers to every element in ARGZ into successive
@@ -3002,8 +3011,8 @@ error occurs.
      same as `*ARGZ', passing in `*ARGZ' as the value of BEFORE will
      result in ENTRY being inserted at the beginning.
 
- -- Function: char * argz_next (char *ARGZ, size_t ARGZ_LEN, const char
-          *ENTRY)
+ -- Function: char * argz_next (const char *ARGZ, size_t ARGZ_LEN,
+          const char *ENTRY)
      The `argz_next' function provides a convenient way of iterating
      over the elements in the argz vector ARGZ.  It returns a pointer
      to the next element in ARGZ after the element ENTRY, or `0' if
@@ -7075,8 +7084,8 @@ File: libc.info,  Node: Message Translation,  Next: Searching and Sorting,  Prev
 8 Message Translation
 *********************
 
-The program's interface with the human should be designed in a way to
-ease the human the task.  One of the possibilities is to use messages in
+The program's interface with the user should be designed to ease the
+user's task.  One way to ease the user's task is to use messages in
 whatever language the user prefers.
 
    Printing messages in different languages can be implemented in
@@ -7110,7 +7119,7 @@ of the message handling functions are
    * map a given key to the translated message
 
    The two approaches mainly differ in the implementation of this last
-step.  The design decisions made for this influences the whole rest.
+step.  Decisions made in the last step influence the rest of the design.
 
 * Menu:
 

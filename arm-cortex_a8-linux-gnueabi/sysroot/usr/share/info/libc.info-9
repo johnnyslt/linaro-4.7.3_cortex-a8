@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -1696,6 +1705,297 @@ Free Documentation License".
    (a) The FSF's Back-Cover Text is: "You have the freedom to copy and
 modify this GNU manual.  Buying copies from the FSF supports it in
 developing GNU and promoting software freedom."
+
+
+File: libc.info,  Node: crypt,  Next: DES Encryption,  Prev: getpass,  Up: Cryptographic Functions
+
+32.3 Encrypting Passwords
+=========================
+
+ -- Function: char * crypt (const char *KEY, const char *SALT)
+     The `crypt' function takes a password, KEY, as a string, and a
+     SALT character array which is described below, and returns a
+     printable ASCII string which starts with another salt.  It is
+     believed that, given the output of the function, the best way to
+     find a KEY that will produce that output is to guess values of KEY
+     until the original value of KEY is found.
+
+     The SALT parameter does two things.  Firstly, it selects which
+     algorithm is used, the MD5-based one or the DES-based one.
+     Secondly, it makes life harder for someone trying to guess
+     passwords against a file containing many passwords; without a
+     SALT, an intruder can make a guess, run `crypt' on it once, and
+     compare the result with all the passwords.  With a SALT, the
+     intruder must run `crypt' once for each different salt.
+
+     For the MD5-based algorithm, the SALT should consist of the string
+     `$1$', followed by up to 8 characters, terminated by either
+     another `$' or the end of the string.  The result of `crypt' will
+     be the SALT, followed by a `$' if the salt didn't end with one,
+     followed by 22 characters from the alphabet `./0-9A-Za-z', up to
+     34 characters total.  Every character in the KEY is significant.
+
+     For the DES-based algorithm, the SALT should consist of two
+     characters from the alphabet `./0-9A-Za-z', and the result of
+     `crypt' will be those two characters followed by 11 more from the
+     same alphabet, 13 in total.  Only the first 8 characters in the
+     KEY are significant.
+
+     The MD5-based algorithm has no limit on the useful length of the
+     password used, and is slightly more secure.  It is therefore
+     preferred over the DES-based algorithm.
+
+     When the user enters their password for the first time, the SALT
+     should be set to a new string which is reasonably random.  To
+     verify a password against the result of a previous call to
+     `crypt', pass the result of the previous call as the SALT.
+
+   The following short program is an example of how to use `crypt' the
+first time a password is entered.  Note that the SALT generation is
+just barely acceptable; in particular, it is not unique between
+machines, and in many applications it would not be acceptable to let an
+attacker know what time the user's password was last set.
+
+
+     #include <stdio.h>
+     #include <time.h>
+     #include <unistd.h>
+     #include <crypt.h>
+
+     int
+     main(void)
+     {
+       unsigned long seed[2];
+       char salt[] = "$1$........";
+       const char *const seedchars =
+         "./0123456789ABCDEFGHIJKLMNOPQRST"
+         "UVWXYZabcdefghijklmnopqrstuvwxyz";
+       char *password;
+       int i;
+
+       /* Generate a (not very) random seed.
+          You should do it better than this... */
+       seed[0] = time(NULL);
+       seed[1] = getpid() ^ (seed[0] >> 14 & 0x30000);
+
+       /* Turn it into printable characters from `seedchars'. */
+       for (i = 0; i < 8; i++)
+         salt[3+i] = seedchars[(seed[i/5] >> (i%5)*6) & 0x3f];
+
+       /* Read in the user's password and encrypt it. */
+       password = crypt(getpass("Password:"), salt);
+
+       /* Print the results. */
+       puts(password);
+       return 0;
+     }
+
+   The next program shows how to verify a password.  It prompts the user
+for a password and prints "Access granted." if the user types `GNU libc
+manual'.
+
+
+     #include <stdio.h>
+     #include <string.h>
+     #include <unistd.h>
+     #include <crypt.h>
+
+     int
+     main(void)
+     {
+       /* Hashed form of "GNU libc manual". */
+       const char *const pass = "$1$/iSaq7rB$EoUw5jJPPvAPECNaaWzMK/";
+
+       char *result;
+       int ok;
+
+       /* Read in the user's password and encrypt it,
+          passing the expected password in as the salt. */
+       result = crypt(getpass("Password:"), pass);
+
+       /* Test the result. */
+       ok = strcmp (result, pass) == 0;
+
+       puts(ok ? "Access granted." : "Access denied.");
+       return ok ? 0 : 1;
+     }
+
+ -- Function: char * crypt_r (const char *KEY, const char *SALT, struct
+          crypt_data * DATA)
+     The `crypt_r' function does the same thing as `crypt', but takes
+     an extra parameter which includes space for its result (among
+     other things), so it can be reentrant.  `data->initialized' must be
+     cleared to zero before the first time `crypt_r' is called.
+
+     The `crypt_r' function is a GNU extension.
+
+   The `crypt' and `crypt_r' functions are prototyped in the header
+`crypt.h'.
+
+
+File: libc.info,  Node: DES Encryption,  Prev: crypt,  Up: Cryptographic Functions
+
+32.4 DES Encryption
+===================
+
+The Data Encryption Standard is described in the US Government Federal
+Information Processing Standards (FIPS) 46-3 published by the National
+Institute of Standards and Technology.  The DES has been very thoroughly
+analyzed since it was developed in the late 1970s, and no new
+significant flaws have been found.
+
+   However, the DES uses only a 56-bit key (plus 8 parity bits), and a
+machine has been built in 1998 which can search through all possible
+keys in about 6 days, which cost about US$200000; faster searches would
+be possible with more money.  This makes simple DES insecure for most
+purposes, and NIST no longer permits new US government systems to use
+simple DES.
+
+   For serious encryption functionality, it is recommended that one of
+the many free encryption libraries be used instead of these routines.
+
+   The DES is a reversible operation which takes a 64-bit block and a
+64-bit key, and produces another 64-bit block.  Usually the bits are
+numbered so that the most-significant bit, the first bit, of each block
+is numbered 1.
+
+   Under that numbering, every 8th bit of the key (the 8th, 16th, and so
+on) is not used by the encryption algorithm itself.  But the key must
+have odd parity; that is, out of bits 1 through 8, and 9 through 16, and
+so on, there must be an odd number of `1' bits, and this completely
+specifies the unused bits.
+
+ -- Function: void setkey (const char *KEY)
+     The `setkey' function sets an internal data structure to be an
+     expanded form of KEY.  KEY is specified as an array of 64 bits
+     each stored in a `char', the first bit is `key[0]' and the 64th
+     bit is `key[63]'.  The KEY should have the correct parity.
+
+ -- Function: void encrypt (char *BLOCK, int EDFLAG)
+     The `encrypt' function encrypts BLOCK if EDFLAG is 0, otherwise it
+     decrypts BLOCK, using a key previously set by `setkey'.  The
+     result is placed in BLOCK.
+
+     Like `setkey', BLOCK is specified as an array of 64 bits each
+     stored in a `char', but there are no parity bits in BLOCK.
+
+ -- Function: void setkey_r (const char *KEY, struct crypt_data * DATA)
+ -- Function: void encrypt_r (char *BLOCK, int EDFLAG, struct
+          crypt_data * DATA)
+     These are reentrant versions of `setkey' and `encrypt'.  The only
+     difference is the extra parameter, which stores the expanded
+     version of KEY.  Before calling `setkey_r' the first time,
+     `data->initialized' must be cleared to zero.
+
+   The `setkey_r' and `encrypt_r' functions are GNU extensions.
+`setkey', `encrypt', `setkey_r', and `encrypt_r' are defined in
+`crypt.h'.
+
+ -- Function: int ecb_crypt (char *KEY, char *BLOCKS, unsigned LEN,
+          unsigned MODE)
+     The function `ecb_crypt' encrypts or decrypts one or more blocks
+     using DES.  Each block is encrypted independently.
+
+     The BLOCKS and the KEY are stored packed in 8-bit bytes, so that
+     the first bit of the key is the most-significant bit of `key[0]'
+     and the 63rd bit of the key is stored as the least-significant bit
+     of `key[7]'.  The KEY should have the correct parity.
+
+     LEN is the number of bytes in BLOCKS.  It should be a multiple of
+     8 (so that there is a whole number of blocks to encrypt).  LEN is
+     limited to a maximum of `DES_MAXDATA' bytes.
+
+     The result of the encryption replaces the input in BLOCKS.
+
+     The MODE parameter is the bitwise OR of two of the following:
+
+    `DES_ENCRYPT'
+          This constant, used in the MODE parameter, specifies that
+          BLOCKS is to be encrypted.
+
+    `DES_DECRYPT'
+          This constant, used in the MODE parameter, specifies that
+          BLOCKS is to be decrypted.
+
+    `DES_HW'
+          This constant, used in the MODE parameter, asks to use a
+          hardware device.  If no hardware device is available,
+          encryption happens anyway, but in software.
+
+    `DES_SW'
+          This constant, used in the MODE parameter, specifies that no
+          hardware device is to be used.
+
+     The result of the function will be one of these values:
+
+    `DESERR_NONE'
+          The encryption succeeded.
+
+    `DESERR_NOHWDEVICE'
+          The encryption succeeded, but there was no hardware device
+          available.
+
+    `DESERR_HWERROR'
+          The encryption failed because of a hardware problem.
+
+    `DESERR_BADPARAM'
+          The encryption failed because of a bad parameter, for
+          instance LEN is not a multiple of 8 or LEN is larger than
+          `DES_MAXDATA'.
+
+ -- Function: int DES_FAILED (int ERR)
+     This macro returns 1 if ERR is a `success' result code from
+     `ecb_crypt' or `cbc_crypt', and 0 otherwise.
+
+ -- Function: int cbc_crypt (char *KEY, char *BLOCKS, unsigned LEN,
+          unsigned MODE, char *IVEC)
+     The function `cbc_crypt' encrypts or decrypts one or more blocks
+     using DES in Cipher Block Chaining mode.
+
+     For encryption in CBC mode, each block is exclusive-ored with IVEC
+     before being encrypted, then IVEC is replaced with the result of
+     the encryption, then the next block is processed.  Decryption is
+     the reverse of this process.
+
+     This has the advantage that blocks which are the same before being
+     encrypted are very unlikely to be the same after being encrypted,
+     making it much harder to detect patterns in the data.
+
+     Usually, IVEC is set to 8 random bytes before encryption starts.
+     Then the 8 random bytes are transmitted along with the encrypted
+     data (without themselves being encrypted), and passed back in as
+     IVEC for decryption.  Another possibility is to set IVEC to 8
+     zeroes initially, and have the first the block encrypted consist
+     of 8 random bytes.
+
+     Otherwise, all the parameters are similar to those for `ecb_crypt'.
+
+ -- Function: void des_setparity (char *KEY)
+     The function `des_setparity' changes the 64-bit KEY, stored packed
+     in 8-bit bytes, to have odd parity by altering the low bits of
+     each byte.
+
+   The `ecb_crypt', `cbc_crypt', and `des_setparity' functions and
+their accompanying macros are all defined in the header
+`rpc/des_crypt.h'.
+
+
+File: libc.info,  Node: Debugging Support,  Next: POSIX Threads,  Prev: Cryptographic Functions,  Up: Top
+
+33 Debugging support
+********************
+
+Applications are usually debugged using dedicated debugger programs.
+But sometimes this is not possible and, in any case, it is useful to
+provide the developer with as much information as possible at the time
+the problems are experienced.  For this reason a few functions are
+provided which a program can use to help the developer more easily
+locate the problem.
+
+* Menu:
+
+* Backtraces::                Obtaining and printing a back trace of the
+                               current stack.
 
 
 File: libc.info,  Node: Backtraces,  Up: Debugging Support
@@ -1819,7 +2119,96 @@ entries probably all programs should be covered.
      }
 
 
-File: libc.info,  Node: Language Features,  Next: Library Summary,  Prev: Debugging Support,  Up: Top
+File: libc.info,  Node: POSIX Threads,  Next: Language Features,  Prev: Debugging Support,  Up: Top
+
+34 POSIX Threads
+****************
+
+This chapter describes the GNU C Library POSIX Thread implementation.
+
+* Menu:
+
+* Thread-specific Data::          Support for creating and
+				  managing thread-specific data
+* Non-POSIX Extensions::          Additional functions to extend
+				  POSIX Thread functionality
+
+
+File: libc.info,  Node: Thread-specific Data,  Next: Non-POSIX Extensions,  Up: POSIX Threads
+
+34.1 Thread-specific Data
+=========================
+
+The GNU C Library implements functions to allow users to create and
+manage data specific to a thread.  Such data may be destroyed at thread
+exit, if a destructor is provided.  The following functions are defined:
+
+`int pthread_key_create (pthread_key_t *KEY, void (*DESTRUCTOR)(void*))'
+     Create a thread-specific data key for the calling thread,
+     referenced by KEY.
+
+     Objects declared with the C++11 `thread_local' keyword are
+     destroyed before thread-specific data, so they should not be used
+     in thread-specific data destructors or even as members of the
+     thread-specific data, since the latter is passed as an argument to
+     the destructor function.
+
+`int pthread_key_delete (pthread_key_t KEY)'
+     Destroy the thread-specific data KEY in the calling thread.  The
+     destructor for the thread-specific data is not called during
+     destruction, nor is it called during thread exit.
+
+`void *pthread_getspecific (pthread_key_t KEY)'
+     Return the thread-specific data associated with KEY in the calling
+     thread.
+
+`int pthread_setspecific (pthread_key_t KEY, const void *VALUE)'
+     Associate the thread-specific VALUE with KEY in the calling thread.
+
+
+
+File: libc.info,  Node: Non-POSIX Extensions,  Prev: Thread-specific Data,  Up: POSIX Threads
+
+34.2 Non-POSIX Extensions
+=========================
+
+In addition to implementing the POSIX API for threads, the GNU C
+Library provides additional functions and interfaces to provide
+functionality not specified in the standard.
+
+* Menu:
+
+* Default Thread Attributes::             Setting default attributes for
+					  threads in a process.
+
+
+File: libc.info,  Node: Default Thread Attributes,  Up: Non-POSIX Extensions
+
+34.2.1 Setting Process-wide defaults for thread attributes
+----------------------------------------------------------
+
+The GNU C Library provides non-standard API functions to set and get
+the default attributes used in the creation of threads in a process.
+
+ -- Function: int pthread_getattr_default_np (pthread_attr_t *ATTR)
+     Get the default attribute values and set ATTR to match.  This
+     function returns 0 on success and a non-zero error code on failure.
+
+ -- Function: int pthread_getattr_default_np (pthread_attr_t *ATTR)
+     Set the default attribute values to match the values in ATTR.  The
+     function returns 0 on success and a non-zero error code on failure.
+     The following error codes are defined for this function:
+
+    `EINVAL'
+          At least one of the values in ATTR does not qualify as valid
+          for the attributes or the stack address is set in the
+          attribute.
+
+    `ENOMEM'
+          The system does not have sufficient memory.
+
+
+File: libc.info,  Node: Language Features,  Next: Library Summary,  Prev: POSIX Threads,  Up: Top
 
 Appendix A C Language Facilities in the Library
 ***********************************************
@@ -2971,13 +3360,13 @@ it.
 `int aio_read (struct aiocb *AIOCBP)'
      `aio.h' (POSIX.1b):  *note Asynchronous Reads/Writes::.
 
-`int aio_read64 (struct aiocb *AIOCBP)'
+`int aio_read64 (struct aiocb64 *AIOCBP)'
      `aio.h' (Unix98):  *note Asynchronous Reads/Writes::.
 
-`ssize_t aio_return (const struct aiocb *AIOCBP)'
+`ssize_t aio_return (struct aiocb *AIOCBP)'
      `aio.h' (POSIX.1b):  *note Status of AIO Operations::.
 
-`int aio_return64 (const struct aiocb64 *AIOCBP)'
+`ssize_t aio_return64 (struct aiocb64 *AIOCBP)'
      `aio.h' (Unix98):  *note Status of AIO Operations::.
 
 `int aio_suspend (const struct aiocb *const LIST[], int NENT, const struct timespec *TIMEOUT)'
@@ -2989,7 +3378,7 @@ it.
 `int aio_write (struct aiocb *AIOCBP)'
      `aio.h' (POSIX.1b):  *note Asynchronous Reads/Writes::.
 
-`int aio_write64 (struct aiocb *AIOCBP)'
+`int aio_write64 (struct aiocb64 *AIOCBP)'
      `aio.h' (Unix98):  *note Asynchronous Reads/Writes::.
 
 `unsigned int alarm (unsigned int SECONDS)'
@@ -3130,13 +3519,13 @@ it.
 `void argz_delete (char **ARGZ, size_t *ARGZ_LEN, char *ENTRY)'
      `argz.h' (GNU):  *note Argz Functions::.
 
-`void argz_extract (char *ARGZ, size_t ARGZ_LEN, char **ARGV)'
+`void argz_extract (const char *ARGZ, size_t ARGZ_LEN, char **ARGV)'
      `argz.h' (GNU):  *note Argz Functions::.
 
 `error_t argz_insert (char **ARGZ, size_t *ARGZ_LEN, char *BEFORE, const char *ENTRY)'
      `argz.h' (GNU):  *note Argz Functions::.
 
-`char * argz_next (char *ARGZ, size_t ARGZ_LEN, const char *ENTRY)'
+`char * argz_next (const char *ARGZ, size_t ARGZ_LEN, const char *ENTRY)'
      `argz.h' (GNU):  *note Argz Functions::.
 
 `error_t argz_replace (char **ARGZ, size_t *ARGZ_LEN, const char *STR, const char *WITH, unsigned *REPLACE_COUNT)'
@@ -3289,11 +3678,11 @@ it.
 `void backtrace_symbols_fd (void *const *BUFFER, int SIZE, int FD)'
      `execinfo.h' (GNU):  *note Backtraces::.
 
-`char * basename (char *PATH)'
-     `libgen.h' (XPG):  *note Finding Tokens in a String::.
-
 `char * basename (const char *FILENAME)'
      `string.h' (GNU):  *note Finding Tokens in a String::.
+
+`char * basename (const char *PATH)'
+     `libgen.h' (XPG):  *note Finding Tokens in a String::.
 
 `int BC_BASE_MAX'
      `limits.h' (POSIX.2):  *note Utility Limits::.
@@ -4550,7 +4939,7 @@ it.
      `errno.h' (Linux???: Srmount error):  *note Error Codes::.
 
 `int ESTALE'
-     `errno.h' (BSD: Stale NFS file handle):  *note Error Codes::.
+     `errno.h' (BSD: Stale file handle):  *note Error Codes::.
 
 `int ESTRPIPE'
      `errno.h' (Linux???: Streams pipe error):  *note Error Codes::.
@@ -4676,10 +5065,10 @@ it.
 `int fchdir (int FILEDES)'
      `unistd.h' (XPG):  *note Working Directory::.
 
-`int fchmod (int FILEDES, int MODE)'
+`int fchmod (int FILEDES, mode_t MODE)'
      `sys/stat.h' (BSD):  *note Setting Permissions::.
 
-`int fchown (int FILEDES, int OWNER, int GROUP)'
+`int fchown (int FILEDES, uid_t OWNER, gid_t GROUP)'
      `unistd.h' (BSD):  *note File Owner::.
 
 `int fclose (FILE *STREAM)'
@@ -4757,7 +5146,7 @@ it.
 `int fegetenv (fenv_t *ENVP)'
      `fenv.h' (ISO):  *note Control Functions::.
 
-`int fegetexcept (int EXCEPTS)'
+`int fegetexcept (void)'
      `fenv.h' (GNU):  *note Control Functions::.
 
 `int fegetexceptflag (fexcept_t *FLAGP, int EXCEPTS)'
@@ -5114,7 +5503,7 @@ it.
 `wint_t fputwc (wchar_t WC, FILE *STREAM)'
      `wchar.h' (ISO):  *note Simple Output::.
 
-`wint_t fputwc_unlocked (wint_t WC, FILE *STREAM)'
+`wint_t fputwc_unlocked (wchar_t WC, FILE *STREAM)'
      `wchar.h' (POSIX):  *note Simple Output::.
 
 `int fputws (const wchar_t *WS, FILE *STREAM)'
@@ -5240,7 +5629,7 @@ it.
 `void funlockfile (FILE *STREAM)'
      `stdio.h' (POSIX):  *note Streams and Threads::.
 
-`int futimes (int FD, struct timeval TVP[2])'
+`int futimes (int FD, const struct timeval TVP[2])'
      `sys/time.h' (BSD):  *note File Times::.
 
 `int fwide (FILE *STREAM, int MODE)'
@@ -5375,10 +5764,10 @@ it.
 `int getgroups (int COUNT, gid_t *GROUPS)'
      `unistd.h' (POSIX.1):  *note Reading Persona::.
 
-`struct hostent * gethostbyaddr (const char *ADDR, size_t LENGTH, int FORMAT)'
+`struct hostent * gethostbyaddr (const void *ADDR, socklen_t LENGTH, int FORMAT)'
      `netdb.h' (BSD):  *note Host Names::.
 
-`int gethostbyaddr_r (const char *ADDR, size_t LENGTH, int FORMAT, struct hostent *restrict RESULT_BUF, char *restrict BUF, size_t BUFLEN, struct hostent **restrict RESULT, int *restrict H_ERRNOP)'
+`int gethostbyaddr_r (const void *ADDR, socklen_t LENGTH, int FORMAT, struct hostent *restrict RESULT_BUF, char *restrict BUF, size_t BUFLEN, struct hostent **restrict RESULT, int *restrict H_ERRNOP)'
      `netdb.h' (GNU):  *note Host Names::.
 
 `struct hostent * gethostbyname (const char *NAME)'
@@ -5417,10 +5806,10 @@ it.
 `struct mntent * getmntent (FILE *STREAM)'
      `mntent.h' (BSD):  *note mtab::.
 
-`struct mntent * getmntent_r (FILE *STREAM, struct mentent *RESULT, char *BUFFER, int BUFSIZE)'
+`struct mntent * getmntent_r (FILE *STREAM, struct mntent *RESULT, char *BUFFER, int BUFSIZE)'
      `mntent.h' (BSD):  *note mtab::.
 
-`struct netent * getnetbyaddr (unsigned long int NET, int TYPE)'
+`struct netent * getnetbyaddr (uint32_t NET, int TYPE)'
      `netdb.h' (BSD):  *note Networks Database::.
 
 `struct netent * getnetbyname (const char *NAME)'
@@ -5432,7 +5821,7 @@ it.
 `int getnetgrent (char **HOSTP, char **USERP, char **DOMAINP)'
      `netdb.h' (BSD):  *note Lookup Netgroup::.
 
-`int getnetgrent_r (char **HOSTP, char **USERP, char **DOMAINP, char *BUFFER, int BUFLEN)'
+`int getnetgrent_r (char **HOSTP, char **USERP, char **DOMAINP, char *BUFFER, size_t BUFLEN)'
      `netdb.h' (GNU):  *note Lookup Netgroup::.
 
 `int get_nprocs (void)'
@@ -5441,7 +5830,7 @@ it.
 `int get_nprocs_conf (void)'
      `sys/sysinfo.h' (GNU):  *note Processor Resources::.
 
-`int getopt (int ARGC, char **ARGV, const char *OPTIONS)'
+`int getopt (int ARGC, char *const *ARGV, const char *OPTIONS)'
      `unistd.h' (POSIX.2):  *note Using Getopt::.
 
 `int getopt_long (int ARGC, char *const *ARGV, const char *SHORTOPTS, const struct option *LONGOPTS, int *INDEXPTR)'
@@ -5496,7 +5885,7 @@ it.
 `struct passwd * getpwent (void)'
      `pwd.h' (POSIX.1):  *note Scanning All Users::.
 
-`int getpwent_r (struct passwd *RESULT_BUF, char *BUFFER, int BUFLEN, struct passwd **RESULT)'
+`int getpwent_r (struct passwd *RESULT_BUF, char *BUFFER, size_t BUFLEN, struct passwd **RESULT)'
      `pwd.h' (GNU):  *note Scanning All Users::.
 
 `struct passwd * getpwnam (const char *NAME)'
@@ -5541,7 +5930,7 @@ it.
 `int getsockopt (int SOCKET, int LEVEL, int OPTNAME, void *OPTVAL, socklen_t *OPTLEN-PTR)'
      `sys/socket.h' (BSD):  *note Socket Option Functions::.
 
-`int getsubopt (char **OPTIONP, const char* const *TOKENS, char **VALUEP)'
+`int getsubopt (char **OPTIONP, char *const *TOKENS, char **VALUEP)'
      `stdlib.h' (stdlib.h):  *note Suboptions Example: Suboptions.
 
 `char * gettext (const char *MSGID)'
@@ -5862,7 +6251,7 @@ it.
 `char * inet_ntoa (struct in_addr ADDR)'
      `arpa/inet.h' (BSD):  *note Host Address Functions::.
 
-`const char * inet_ntop (int AF, const void *CP, char *BUF, size_t LEN)'
+`const char * inet_ntop (int AF, const void *CP, char *BUF, socklen_t LEN)'
      `arpa/inet.h' (IPv6 basic API):  *note Host Address Functions::.
 
 `int inet_pton (int AF, const char *CP, void *BUF)'
@@ -5880,7 +6269,7 @@ it.
 `INIT_PROCESS'
      `utmpx.h' (XPG4.2):  *note XPG Functions::.
 
-`void * initstate (unsigned int SEED, void *STATE, size_t SIZE)'
+`char * initstate (unsigned int SEED, char *STATE, size_t SIZE)'
      `stdlib.h' (BSD):  *note BSD Random::.
 
 `int initstate_r (unsigned int SEED, char *restrict STATEBUF, size_t STATELEN, struct random_data *restrict BUF)'
@@ -6005,6 +6394,9 @@ it.
 
 `int ispunct (int C)'
      `ctype.h' (ISO):  *note Classification of Characters::.
+
+`int issignaling (_float-type_ X)'
+     `math.h' (GNU):  *note Floating Point Classes::.
 
 `int isspace (int C)'
      `ctype.h' (ISO):  *note Classification of Characters::.
@@ -6177,7 +6569,7 @@ it.
 `ldiv_t'
      `stdlib.h' (ISO):  *note Integer Division::.
 
-`void * lfind (const void *KEY, void *BASE, size_t *NMEMB, size_t SIZE, comparison_fn_t COMPAR)'
+`void * lfind (const void *KEY, const void *BASE, size_t *NMEMB, size_t SIZE, comparison_fn_t COMPAR)'
      `search.h' (SVID):  *note Array Search Function::.
 
 `double lgamma (double X)'
@@ -6208,12 +6600,12 @@ it.
      `unistd.h' (POSIX.1):  *note Hard Links::.
 
 `int LINK_MAX'
-     `limits.h' (POSIX.1):  *note Limits for Files::.
+     `limits.h', `(optional)' (POSIX.1):  *note Limits for Files::.
 
 `int lio_listio (int MODE, struct aiocb *const LIST[], int NENT, struct sigevent *SIG)'
      `aio.h' (POSIX.1b):  *note Asynchronous Reads/Writes::.
 
-`int lio_listio64 (int MODE, struct aiocb *const LIST, int NENT, struct sigevent *SIG)'
+`int lio_listio64 (int MODE, struct aiocb64 *const LIST[], int NENT, struct sigevent *SIG)'
      `aio.h' (Unix98):  *note Asynchronous Reads/Writes::.
 
 `int listen (int SOCKET, int N)'
@@ -6342,7 +6734,7 @@ it.
 `long int lrand48 (void)'
      `stdlib.h' (SVID):  *note SVID Random::.
 
-`int lrand48_r (struct drand48_data *BUFFER, double *RESULT)'
+`int lrand48_r (struct drand48_data *BUFFER, long int *RESULT)'
      `stdlib.h' (GNU):  *note SVID Random::.
 
 `long int lrint (double X)'
@@ -6384,7 +6776,7 @@ it.
 `int L_tmpnam'
      `stdio.h' (ISO):  *note Temporary Files::.
 
-`int lutimes (const char *FILENAME, struct timeval TVP[2])'
+`int lutimes (const char *FILENAME, const struct timeval TVP[2])'
      `sys/time.h' (BSD):  *note File Times::.
 
 `L_XTND'
@@ -6505,7 +6897,7 @@ it.
 `int mkfifo (const char *FILENAME, mode_t MODE)'
      `sys/stat.h' (POSIX.1):  *note FIFO Special Files::.
 
-`int mknod (const char *FILENAME, int MODE, int DEV)'
+`int mknod (const char *FILENAME, mode_t MODE, dev_t DEV)'
      `sys/stat.h' (BSD):  *note Making Special Files::.
 
 `int mkstemp (char *TEMPLATE)'
@@ -6547,7 +6939,7 @@ it.
 `long int mrand48 (void)'
      `stdlib.h' (SVID):  *note SVID Random::.
 
-`int mrand48_r (struct drand48_data *BUFFER, double *RESULT)'
+`int mrand48_r (struct drand48_data *BUFFER, long int *RESULT)'
      `stdlib.h' (GNU):  *note SVID Random::.
 
 `void * mremap (void *ADDRESS, size_t LENGTH, size_t NEW_LENGTH, int FLAG)'
@@ -6668,7 +7060,7 @@ it.
      `termios.h' (POSIX.1):  *note Local Modes::.
 
 `tcflag_t NOKERNINFO'
-     `termios.h' (BSD):  *note Local Modes::.
+     `termios.h', `(optional)' (BSD):  *note Local Modes::.
 
 `NO_RECOVERY'
      `netdb.h' (BSD):  *note Host Names::.
@@ -6791,10 +7183,10 @@ it.
      `fcntl.h' (POSIX.1):  *note Open-time Flags::.
 
 `int O_EXEC'
-     `fcntl.h' (GNU):  *note Access Modes::.
+     `fcntl.h', `(optional)' (GNU):  *note Access Modes::.
 
 `int O_EXLOCK'
-     `fcntl.h' (BSD):  *note Open-time Flags::.
+     `fcntl.h', `(optional)' (BSD):  *note Open-time Flags::.
 
 `off64_t'
      `sys/types.h' (Unix98):  *note File Position Primitive::.
@@ -6809,7 +7201,7 @@ it.
      `fcntl.h' (BSD):  *note Operating Modes::.
 
 `int O_IGNORE_CTTY'
-     `fcntl.h' (GNU):  *note Open-time Flags::.
+     `fcntl.h', `(optional)' (GNU):  *note Open-time Flags::.
 
 `OLD_TIME'
      `utmp.h' (SVID):  *note Manipulating the Database::.
@@ -6833,10 +7225,10 @@ it.
      `fcntl.h' (POSIX.1):  *note Open-time Flags::.
 
 `tcflag_t ONOEOT'
-     `termios.h' (BSD):  *note Output Modes::.
+     `termios.h', `(optional)' (BSD):  *note Output Modes::.
 
 `int O_NOLINK'
-     `fcntl.h' (GNU):  *note Open-time Flags::.
+     `fcntl.h', `(optional)' (GNU):  *note Open-time Flags::.
 
 `int O_NONBLOCK'
      `fcntl.h' (POSIX.1):  *note Open-time Flags::.
@@ -6845,7 +7237,7 @@ it.
      `fcntl.h' (POSIX.1):  *note Operating Modes::.
 
 `int O_NOTRANS'
-     `fcntl.h' (GNU):  *note Open-time Flags::.
+     `fcntl.h', `(optional)' (GNU):  *note Open-time Flags::.
 
 `int open (const char *FILENAME, int FLAGS[, mode_t MODE])'
      `fcntl.h' (POSIX.1):  *note Opening and Closing Files::.
@@ -6905,10 +7297,10 @@ it.
      `fcntl.h' (POSIX.1):  *note Access Modes::.
 
 `int O_READ'
-     `fcntl.h' (GNU):  *note Access Modes::.
+     `fcntl.h', `(optional)' (GNU):  *note Access Modes::.
 
 `int O_SHLOCK'
-     `fcntl.h' (BSD):  *note Open-time Flags::.
+     `fcntl.h', `(optional)' (BSD):  *note Open-time Flags::.
 
 `int O_SYNC'
      `fcntl.h' (BSD):  *note Operating Modes::.
@@ -6917,13 +7309,13 @@ it.
      `fcntl.h' (POSIX.1):  *note Open-time Flags::.
 
 `int O_WRITE'
-     `fcntl.h' (GNU):  *note Access Modes::.
+     `fcntl.h', `(optional)' (GNU):  *note Access Modes::.
 
 `int O_WRONLY'
      `fcntl.h' (POSIX.1):  *note Access Modes::.
 
 `tcflag_t OXTABS'
-     `termios.h' (BSD):  *note Output Modes::.
+     `termios.h', `(optional)' (BSD):  *note Output Modes::.
 
 `PA_CHAR'
      `printf.h' (GNU):  *note Parsing a Template String::.
@@ -6982,7 +7374,7 @@ it.
 `int PATH_MAX'
      `limits.h' (POSIX.1):  *note Limits for Files::.
 
-`int pause ()'
+`int pause (void)'
      `unistd.h' (POSIX.1):  *note Using Pause::.
 
 `_PC_ASYNC_IO'
@@ -7378,7 +7770,7 @@ it.
 `int readdir_r (DIR *DIRSTREAM, struct dirent *ENTRY, struct dirent **RESULT)'
      `dirent.h' (GNU):  *note Reading/Closing Directory::.
 
-`int readlink (const char *FILENAME, char *BUFFER, size_t SIZE)'
+`ssize_t readlink (const char *FILENAME, char *BUFFER, size_t SIZE)'
      `unistd.h' (BSD):  *note Symbolic Links::.
 
 `ssize_t readv (int FILEDES, const struct iovec *VECTOR, int COUNT)'
@@ -7393,13 +7785,13 @@ it.
 `char * realpath (const char *restrict NAME, char *restrict RESOLVED)'
      `stdlib.h' (XPG):  *note Symbolic Links::.
 
-`int recv (int SOCKET, void *BUFFER, size_t SIZE, int FLAGS)'
+`ssize_t recv (int SOCKET, void *BUFFER, size_t SIZE, int FLAGS)'
      `sys/socket.h' (BSD):  *note Receiving Data::.
 
-`int recvfrom (int SOCKET, void *BUFFER, size_t SIZE, int FLAGS, struct sockaddr *ADDR, socklen_t *LENGTH-PTR)'
+`ssize_t recvfrom (int SOCKET, void *BUFFER, size_t SIZE, int FLAGS, struct sockaddr *ADDR, socklen_t *LENGTH-PTR)'
      `sys/socket.h' (BSD):  *note Receiving Datagrams::.
 
-`int recvmsg (int SOCKET, struct msghdr *MESSAGE, int FLAGS)'
+`ssize_t recvmsg (int SOCKET, struct msghdr *MESSAGE, int FLAGS)'
      `sys/socket.h' (BSD):  *note Receiving Datagrams::.
 
 `int RE_DUP_MAX'
@@ -7525,7 +7917,7 @@ it.
 `long double rintl (long double X)'
      `math.h' (ISO):  *note Rounding Functions::.
 
-`int RLIM_INFINITY'
+`rlim_t RLIM_INFINITY'
      `sys/resource.h' (BSD):  *note Limits on Resources::.
 
 `RLIMIT_AS'
@@ -7630,37 +8022,37 @@ it.
 `_SC_AIO_PRIO_DELTA_MAX'
      `unistd.h' (POSIX.1):  *note Constants for Sysconf::.
 
-`double scalb (double VALUE, int EXPONENT)'
+`double scalb (double VALUE, double EXPONENT)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`float scalbf (float VALUE, int EXPONENT)'
+`float scalbf (float VALUE, float EXPONENT)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long double scalbl (long double VALUE, int EXPONENT)'
+`long double scalbl (long double VALUE, long double EXPONENT)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int scalbln (double X, long int N)'
+`double scalbln (double X, long int N)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int scalblnf (float X, long int N)'
+`float scalblnf (float X, long int N)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int scalblnl (long double X, long int N)'
+`long double scalblnl (long double X, long int N)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int scalbn (double X, int N)'
+`double scalbn (double X, int N)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int scalbnf (float X, int N)'
+`float scalbnf (float X, int N)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int scalbnl (long double X, int N)'
+`long double scalbnl (long double X, int N)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`int scandir (const char *DIR, struct dirent ***NAMELIST, int (*SELECTOR) (const struct dirent *), int (*CMP) (const void *, const void *))'
+`int scandir (const char *DIR, struct dirent ***NAMELIST, int (*SELECTOR) (const struct dirent *), int (*CMP) (const struct dirent **, const struct dirent **))'
      `dirent.h' (BSD/SVID):  *note Scanning Directory Content::.
 
-`int scandir64 (const char *DIR, struct dirent64 ***NAMELIST, int (*SELECTOR) (const struct dirent64 *), int (*CMP) (const void *, const void *))'
+`int scandir64 (const char *DIR, struct dirent64 ***NAMELIST, int (*SELECTOR) (const struct dirent64 *), int (*CMP) (const struct dirent64 **, const struct dirent64 **))'
      `dirent.h' (GNU):  *note Scanning Directory Content::.
 
 `int scanf (const char *TEMPLATE, ...)'
@@ -7738,13 +8130,13 @@ it.
 `int sched_getaffinity (pid_t PID, size_t CPUSETSIZE, cpu_set_t *CPUSET)'
      `sched.h' (GNU):  *note CPU Affinity::.
 
-`int sched_getparam (pid_t PID, const struct sched_param *PARAM)'
+`int sched_getparam (pid_t PID, struct sched_param *PARAM)'
      `sched.h' (POSIX):  *note Basic Scheduling Functions::.
 
-`int sched_get_priority_max (int *POLICY)'
+`int sched_get_priority_max (int POLICY)'
      `sched.h' (POSIX):  *note Basic Scheduling Functions::.
 
-`int sched_get_priority_min (int *POLICY)'
+`int sched_get_priority_min (int POLICY)'
      `sched.h' (POSIX):  *note Basic Scheduling Functions::.
 
 `int sched_getscheduler (pid_t PID)'
@@ -8065,13 +8457,13 @@ it.
 `int select (int NFDS, fd_set *READ-FDS, fd_set *WRITE-FDS, fd_set *EXCEPT-FDS, struct timeval *TIMEOUT)'
      `sys/types.h' (BSD):  *note Waiting for I/O::.
 
-`int send (int SOCKET, void *BUFFER, size_t SIZE, int FLAGS)'
+`ssize_t send (int SOCKET, const void *BUFFER, size_t SIZE, int FLAGS)'
      `sys/socket.h' (BSD):  *note Sending Data::.
 
-`int sendmsg (int SOCKET, const struct msghdr *MESSAGE, int FLAGS)'
+`ssize_t sendmsg (int SOCKET, const struct msghdr *MESSAGE, int FLAGS)'
      `sys/socket.h' (BSD):  *note Receiving Datagrams::.
 
-`int sendto (int SOCKET, void *BUFFER, size_t SIZE, int FLAGS, struct sockaddr *ADDR, socklen_t LENGTH)'
+`ssize_t sendto (int SOCKET, const void *BUFFER, size_t SIZE, int FLAGS, struct sockaddr *ADDR, socklen_t LENGTH)'
      `sys/socket.h' (BSD):  *note Sending Datagrams::.
 
 `void setbuf (FILE *STREAM, char *BUF)'
@@ -8104,7 +8496,7 @@ it.
 `void setgrent (void)'
      `grp.h' (SVID, BSD):  *note Scanning All Groups::.
 
-`int setgroups (size_t COUNT, gid_t *GROUPS)'
+`int setgroups (size_t COUNT, const gid_t *GROUPS)'
      `grp.h' (BSD):  *note Setting Groups::.
 
 `void sethostent (int STAYOPEN)'
@@ -8116,7 +8508,7 @@ it.
 `int sethostname (const char *NAME, size_t LENGTH)'
      `unistd.h' (BSD):  *note Host Identification::.
 
-`int setitimer (int WHICH, struct itimerval *NEW, struct itimerval *OLD)'
+`int setitimer (int WHICH, const struct itimerval *NEW, struct itimerval *OLD)'
      `sys/time.h' (BSD):  *note Setting an Alarm::.
 
 `int setjmp (jmp_buf STATE)'
@@ -8180,10 +8572,10 @@ it.
 `pid_t setsid (void)'
      `unistd.h' (POSIX.1):  *note Process Group Functions::.
 
-`int setsockopt (int SOCKET, int LEVEL, int OPTNAME, void *OPTVAL, socklen_t OPTLEN)'
+`int setsockopt (int SOCKET, int LEVEL, int OPTNAME, const void *OPTVAL, socklen_t OPTLEN)'
      `sys/socket.h' (BSD):  *note Socket Option Functions::.
 
-`void * setstate (void *STATE)'
+`char * setstate (char *STATE)'
      `stdlib.h' (BSD):  *note BSD Random::.
 
 `int setstate_r (char *restrict STATEBUF, struct random_data *restrict BUF)'
@@ -8342,13 +8734,13 @@ it.
 `int signbit (_float-type_ X)'
      `math.h' (ISO):  *note FP Bit Twiddling::.
 
-`long long int significand (double X)'
+`double significand (double X)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int significandf (float X)'
+`float significandf (float X)'
      `math.h' (BSD):  *note Normalization Functions::.
 
-`long long int significandl (long double X)'
+`long double significandl (long double X)'
      `math.h' (BSD):  *note Normalization Functions::.
 
 `int sigpause (int MASK)'
@@ -8387,7 +8779,7 @@ it.
 `sigset_t'
      `signal.h' (POSIX.1):  *note Signal Sets::.
 
-`int sigstack (const struct sigstack *STACK, struct sigstack *OLDSTACK)'
+`int sigstack (struct sigstack *STACK, struct sigstack *OLDSTACK)'
      `signal.h' (BSD):  *note Signal Stack::.
 
 `int SIGSTOP'
@@ -8645,7 +9037,7 @@ it.
 `sighandler_t ssignal (int SIGNUM, sighandler_t ACTION)'
      `signal.h' (SVID):  *note Basic Signal Handling::.
 
-`int SSIZE_MAX'
+`ssize_t SSIZE_MAX'
      `limits.h' (POSIX.1):  *note General Limits::.
 
 `ssize_t'
@@ -8678,7 +9070,7 @@ it.
 `STDOUT_FILENO'
      `unistd.h' (POSIX.1):  *note Descriptors and Streams::.
 
-`int stime (time_t *NEWTIME)'
+`int stime (const time_t *NEWTIME)'
      `time.h' (SVID, XPG):  *note Simple Calendar Time::.
 
 `char * stpcpy (char *restrict TO, const char *restrict FROM)'
@@ -8979,7 +9371,7 @@ it.
      `sys/times.h' (POSIX.1):  *note Processor Time::.
 
 `struct utimbuf'
-     `time.h' (POSIX.1):  *note File Times::.
+     `utime.h' (POSIX.1):  *note File Times::.
 
 `struct utsname'
      `sys/utsname.h' (POSIX.1):  *note Platform Type::.
@@ -8990,7 +9382,7 @@ it.
 `size_t strxfrm (char *restrict TO, const char *restrict FROM, size_t SIZE)'
      `string.h' (ISO):  *note Collation Functions::.
 
-`int stty (int FILEDES, struct sgttyb *ATTRIBUTES)'
+`int stty (int FILEDES, const struct sgttyb *ATTRIBUTES)'
      `sgtty.h' (BSD):  *note BSD Terminal Modes::.
 
 `int S_TYPEISMQ (struct stat *S)'
@@ -9023,7 +9415,7 @@ it.
 `int swprintf (wchar_t *S, size_t SIZE, const wchar_t *TEMPLATE, ...)'
      `wchar.h' (GNU):  *note Formatted Output Functions::.
 
-`int swscanf (const wchar_t *WS, const char *TEMPLATE, ...)'
+`int swscanf (const wchar_t *WS, const wchar_t *TEMPLATE, ...)'
      `wchar.h' (ISO):  *note Formatted Input Functions::.
 
 `int symlink (const char *OLDNAME, const char *NEWNAME)'
@@ -9032,7 +9424,7 @@ it.
 `SYMLINK_MAX'
      `limits.h' (POSIX.1):  *note File Minimums::.
 
-`int sync (void)'
+`void sync (void)'
      `unistd.h' (X/Open):  *note Synchronizing I/O::.
 
 `long int syscall (long int SYSNO, ...)'
@@ -9042,9 +9434,9 @@ it.
      `unistd.h' (POSIX.1):  *note Sysconf Definition::.
 
 `int sysctl (int *NAMES, int NLEN, void *OLDVAL, size_t *OLDLENP, void *NEWVAL, size_t NEWLEN)'
-     `sysctl.h' (BSD):  *note System Parameters::.
+     `sys/sysctl.h' (BSD):  *note System Parameters::.
 
-`void syslog (int FACILITY_PRIORITY, char *FORMAT, ...)'
+`void syslog (int FACILITY_PRIORITY, const char *FORMAT, ...)'
      `syslog.h' (BSD):  *note syslog; vsyslog::.
 
 `int system (const char *COMMAND)'
@@ -9254,7 +9646,7 @@ it.
 `UINT_MAX'
      `limits.h' (ISO):  *note Range of Type::.
 
-`int ulimit (int CMD, ...)'
+`long int ulimit (int CMD, ...)'
      `ulimit.h' (BSD):  *note Limits on Resources::.
 
 `ULLONG_MAX'
@@ -9309,9 +9701,9 @@ it.
      `limits.h' (ISO):  *note Range of Type::.
 
 `int utime (const char *FILENAME, const struct utimbuf *TIMES)'
-     `time.h' (POSIX.1):  *note File Times::.
+     `utime.h' (POSIX.1):  *note File Times::.
 
-`int utimes (const char *FILENAME, struct timeval TVP[2])'
+`int utimes (const char *FILENAME, const struct timeval TVP[2])'
      `sys/time.h' (BSD):  *note File Times::.
 
 `int utmpname (const char *FILE)'
@@ -9401,7 +9793,7 @@ it.
 `int VMIN'
      `termios.h' (POSIX.1):  *note Noncanonical Input::.
 
-`void (*) error_print_progname  (void)'
+`void (*error_print_progname) (void)'
      `error.h' (GNU):  *note Error Messages::.
 
 `int vprintf (const char *TEMPLATE, va_list AP)'
@@ -9443,14 +9835,14 @@ it.
 `int vswscanf (const wchar_t *S, const wchar_t *TEMPLATE, va_list AP)'
      `wchar.h' (ISO):  *note Variable Arguments Input::.
 
-`void vsyslog (int FACILITY_PRIORITY, char *FORMAT, va_list ARGLIST)'
+`void vsyslog (int FACILITY_PRIORITY, const char *FORMAT, va_list ARGLIST)'
      `syslog.h' (BSD):  *note syslog; vsyslog::.
 
 `int VTIME'
      `termios.h' (POSIX.1):  *note Noncanonical Input::.
 
-`int vtimes (struct vtimes CURRENT, struct vtimes CHILD)'
-     `vtimes.h' (vtimes.h):  *note Resource Usage::.
+`int vtimes (struct vtimes *CURRENT, struct vtimes *CHILD)'
+     `sys/vtimes.h' (sys/vtimes.h):  *note Resource Usage::.
 
 `void vwarn (const char *FORMAT, va_list AP)'
      `err.h' (BSD):  *note Error Messages::.
@@ -9509,7 +9901,7 @@ it.
 `size_t wcrtomb (char *restrict S, wchar_t WC, mbstate_t *restrict PS)'
      `wchar.h' (ISO):  *note Converting a Character::.
 
-`int wcscasecmp (const wchar_t *WS1, const wchar_T *WS2)'
+`int wcscasecmp (const wchar_t *WS1, const wchar_t *WS2)'
      `wchar.h' (GNU):  *note String/Array Comparison::.
 
 `wchar_t * wcscat (wchar_t *restrict WTO, const wchar_t *restrict WFROM)'
@@ -9584,7 +9976,7 @@ it.
 `intmax_t wcstoimax (const wchar_t *restrict STRING, wchar_t **restrict TAILPTR, int BASE)'
      `wchar.h' (ISO):  *note Parsing of Integers::.
 
-`wchar_t * wcstok (wchar_t *NEWSTRING, const char *DELIMITERS)'
+`wchar_t * wcstok (wchar_t *NEWSTRING, const wchar_t *DELIMITERS)'
      `wchar.h' (ISO):  *note Finding Tokens in a String::.
 
 `long int wcstol (const wchar_t *restrict STRING, wchar_t **restrict TAILPTR, int BASE)'
@@ -9663,12 +10055,12 @@ it.
      `wchar.h' (ISO):  *note Search Functions::.
 
 `int wmemcmp (const wchar_t *A1, const wchar_t *A2, size_t SIZE)'
-     `wcjar.h' (ISO):  *note String/Array Comparison::.
+     `wchar.h' (ISO):  *note String/Array Comparison::.
 
 `wchar_t * wmemcpy (wchar_t *restrict WTO, const wchar_t *restrict WFROM, size_t SIZE)'
      `wchar.h' (ISO):  *note Copying and Concatenation::.
 
-`wchar_t * wmemmove (wchar *WTO, const wchar_t *WFROM, size_t SIZE)'
+`wchar_t * wmemmove (wchar_t *WTO, const wchar_t *WFROM, size_t SIZE)'
      `wchar.h' (ISO):  *note Copying and Concatenation::.
 
 `wchar_t * wmempcpy (wchar_t *restrict WTO, const wchar_t *restrict WFROM, size_t SIZE)'
@@ -9922,6 +10314,26 @@ will be used, and CFLAGS sets optimization options for the compiler.
      this can be prevented though there generally is no reason since it
      creates compatibility problems.
 
+`--enable-hardcoded-path-in-tests'
+     By default, dynamic tests are linked to run with the installed C
+     library.  This option hardcodes the newly built C library path in
+     dynamic tests so that they can be invoked directly.
+
+`--enable-lock-elision=yes'
+     Enable lock elision for pthread mutexes by default.
+
+`--enable-pt_chown'
+     The file `pt_chown' is a helper binary for `grantpt' (*note
+     Pseudo-Terminals: Allocation.) that is installed setuid root to
+     fix up pseudo-terminal ownership.  It is not built by default
+     because systems using the Linux kernel are commonly built with the
+     `devpts' filesystem enabled and mounted at `/dev/pts', which
+     manages pseudo-terminal ownership automatically.  By using
+     `--enable-pt_chown', you may build `pt_chown' and install it
+     setuid and owned by `root'.  The use of `pt_chown' introduces
+     additional security risks to the system and you should enable it
+     only if you understand and accept those risks.
+
 `--build=BUILD-SYSTEM'
 `--host=HOST-SYSTEM'
      These options are for cross-compiling.  If you specify both
@@ -9935,9 +10347,9 @@ will be used, and CFLAGS sets optimization options for the compiler.
      native compile but use what you specify instead of guessing what
      your system is. This is most useful to change the CPU submodel.
      For example, if `configure' guesses your machine as
-     `i586-pc-linux-gnu' but you want to compile a library for 386es,
-     give `--host=i386-pc-linux-gnu' or just `--host=i386-linux' and add
-     the appropriate compiler flags (`-mcpu=i386' will do the trick) to
+     `i686-pc-linux-gnu' but you want to compile a library for 586es,
+     give `--host=i586-pc-linux-gnu' or just `--host=i586-linux' and add
+     the appropriate compiler flags (`-mcpu=i586' will do the trick) to
      CFLAGS.
 
      If you specify just `--build', `configure' will get confused.
@@ -10110,9 +10522,9 @@ build the GNU C Library:
      recommend GNU `make' version 3.79.  All earlier versions have
      severe bugs or lack features.
 
-   * GCC 4.3 or newer, GCC 4.6 recommended
+   * GCC 4.4 or newer, GCC 4.6 recommended
 
-     GCC 4.3 or higher is required; as of this writing, GCC 4.6 is the
+     GCC 4.4 or higher is required; as of this writing, GCC 4.6 is the
      compiler we advise to use to build the GNU C Library.
 
      You can use whatever compiler you like to compile programs that use
@@ -10135,10 +10547,11 @@ build the GNU C Library:
      installation mechanism for the info files is not present or works
      differently.
 
-   * GNU `awk' 3.0, or higher
+   * GNU `awk' 3.1.2, or higher
 
-     `Awk' is used in several places to generate files.  `gawk' 3.0 is
-     known to work.
+     `awk' is used in several places to generate files.  Some `gawk'
+     extensions are used, including the `asorti' function, which was
+     introduced in version 3.1.2 of `gawk'.
 
    * Perl 5
 
@@ -10367,395 +10780,4 @@ The basic variables that a subdirectory makefile defines are:
 
 * Platform: Adding Platform-specific.             Adding platform-specific
                                          features.
-
-
-File: libc.info,  Node: Adding Platform-specific,  Up: Source Layout
-
-D.1.1 Platform-specific types, macros and functions
----------------------------------------------------
-
-It's sometimes necessary to provide nonstandard, platform-specific
-features to developers.  The C library is traditionally the lowest
-library layer, so it makes sense for it to provide these low-level
-features.  However, including these features in the C library may be a
-disadvantage if another package provides them as well as there will be
-two conflicting versions of them.  Also, the features won't be
-available to projects that do not use the GNU C Library but use other
-GNU tools, like GCC.
-
-   The current guidelines are:
-   * If the header file provides features that only make sense on a
-     particular machine architecture and have nothing to do with an
-     operating system, then the features should ultimately be provided
-     as GCC built-in functions.  Until then, the GNU C Library may
-     provide them in the header file.  When the GCC built-in functions
-     become available, those provided in the header file should be made
-     conditionally available prior to the GCC version in which the
-     built-in function was made available.
-
-   * If the header file provides features that are specific to an
-     operating system, both GCC and the GNU C Library could provide it,
-     but the GNU C Library is preferred as it already has a lot of
-     information about the operating system.
-
-   * If the header file provides features that are specific to an
-     operating system but used by the GNU C Library, then the GNU C
-     Library should provide them.
-
-   The general solution for providing low-level features is to export
-them as follows:
-
-   * A nonstandard, low-level header file that defines macros and inline
-     functions should be called `sys/platform/NAME.h'.
-
-   * Each header file's name should include the platform name, to avoid
-     users thinking there is anything in common between different the
-     header files for different platforms.  For example, a
-     `sys/platform/ARCH.h' name such as `sys/platform/ppc.h' is better
-     than `sys/platform.h'.
-
-   * A platform-specific header file provided by the GNU C Library
-     should coordinate with GCC such that compiler built-in versions of
-     the functions and macros are preferred if available.  This means
-     that user programs will only ever need to include
-     `sys/platform/ARCH.h', keeping the same names of types, macros,
-     and functions for convenience and portability.
-
-   * Each included symbol must have the prefix `__ARCH_', such as
-     `__ppc_get_timebase'.
-
-   The easiest way to provide a header file is to add it to the
-`sysdep_headers' variable.  For example, the combination of
-Linux-specific header files on PowerPC could be provided like this:
-
-     sysdep_headers += sys/platform/ppc.h
-
-   Then ensure that you have added a `sys/platform/ppc.h' header file
-in the machine-specific directory, e.g.,
-`sysdeps/powerpc/sys/platform/ppc.h'.
-
-
-File: libc.info,  Node: Porting,  Prev: Source Layout,  Up: Maintenance
-
-D.2 Porting the GNU C Library
-=============================
-
-The GNU C Library is written to be easily portable to a variety of
-machines and operating systems.  Machine- and operating system-dependent
-functions are well separated to make it easy to add implementations for
-new machines or operating systems.  This section describes the layout of
-the library source tree and explains the mechanisms used to select
-machine-dependent code to use.
-
-   All the machine-dependent and operating system-dependent files in the
-library are in the subdirectory `sysdeps' under the top-level library
-source directory.  This directory contains a hierarchy of
-subdirectories (*note Hierarchy Conventions::).
-
-   Each subdirectory of `sysdeps' contains source files for a
-particular machine or operating system, or for a class of machine or
-operating system (for example, systems by a particular vendor, or all
-machines that use IEEE 754 floating-point format).  A configuration
-specifies an ordered list of these subdirectories.  Each subdirectory
-implicitly appends its parent directory to the list.  For example,
-specifying the list `unix/bsd/vax' is equivalent to specifying the list
-`unix/bsd/vax unix/bsd unix'.  A subdirectory can also specify that it
-implies other subdirectories which are not directly above it in the
-directory hierarchy.  If the file `Implies' exists in a subdirectory,
-it lists other subdirectories of `sysdeps' which are appended to the
-list, appearing after the subdirectory containing the `Implies' file.
-Lines in an `Implies' file that begin with a `#' character are ignored
-as comments.  For example, `unix/bsd/Implies' contains:
-     # BSD has Internet-related things.
-     unix/inet
-   and `unix/Implies' contains:
-     posix
-
-So the final list is `unix/bsd/vax unix/bsd unix/inet unix posix'.
-
-   `sysdeps' has a "special" subdirectory called `generic'.  It is
-always implicitly appended to the list of subdirectories, so you
-needn't put it in an `Implies' file, and you should not create any
-subdirectories under it intended to be new specific categories.
-`generic' serves two purposes.  First, the makefiles do not bother to
-look for a system-dependent version of a file that's not in `generic'.
-This means that any system-dependent source file must have an analogue
-in `generic', even if the routines defined by that file are not
-implemented on other platforms.  Second, the `generic' version of a
-system-dependent file is used if the makefiles do not find a version
-specific to the system you're compiling for.
-
-   If it is possible to implement the routines in a `generic' file in
-machine-independent C, using only other machine-independent functions in
-the C library, then you should do so.  Otherwise, make them stubs.  A
-"stub" function is a function which cannot be implemented on a
-particular machine or operating system.  Stub functions always return an
-error, and set `errno' to `ENOSYS' (Function not implemented).  *Note
-Error Reporting::.  If you define a stub function, you must place the
-statement `stub_warning(FUNCTION)', where FUNCTION is the name of your
-function, after its definition.  This causes the function to be listed
-in the installed `<gnu/stubs.h>', and makes GNU ld warn when the
-function is used.
-
-   Some rare functions are only useful on specific systems and aren't
-defined at all on others; these do not appear anywhere in the
-system-independent source code or makefiles (including the `generic'
-directory), only in the system-dependent `Makefile' in the specific
-system's subdirectory.
-
-   If you come across a file that is in one of the main source
-directories (`string', `stdio', etc.), and you want to write a machine-
-or operating system-dependent version of it, move the file into
-`sysdeps/generic' and write your new implementation in the appropriate
-system-specific subdirectory.  Note that if a file is to be
-system-dependent, it *must not* appear in one of the main source
-directories.
-
-   There are a few special files that may exist in each subdirectory of
-`sysdeps':
-
-`Makefile'
-     A makefile for this machine or operating system, or class of
-     machine or operating system.  This file is included by the library
-     makefile `Makerules', which is used by the top-level makefile and
-     the subdirectory makefiles.  It can change the variables set in the
-     including makefile or add new rules.  It can use GNU `make'
-     conditional directives based on the variable `subdir' (see above)
-     to select different sets of variables and rules for different
-     sections of the library.  It can also set the `make' variable
-     `sysdep-routines', to specify extra modules to be included in the
-     library.  You should use `sysdep-routines' rather than adding
-     modules to `routines' because the latter is used in determining
-     what to distribute for each subdirectory of the main source tree.
-
-     Each makefile in a subdirectory in the ordered list of
-     subdirectories to be searched is included in order.  Since several
-     system-dependent makefiles may be included, each should append to
-     `sysdep-routines' rather than simply setting it:
-
-          sysdep-routines := $(sysdep-routines) foo bar
-
-`Subdirs'
-     This file contains the names of new whole subdirectories under the
-     top-level library source tree that should be included for this
-     system.  These subdirectories are treated just like the
-     system-independent subdirectories in the library source tree, such
-     as `stdio' and `math'.
-
-     Use this when there are completely new sets of functions and header
-     files that should go into the library for the system this
-     subdirectory of `sysdeps' implements.  For example,
-     `sysdeps/unix/inet/Subdirs' contains `inet'; the `inet' directory
-     contains various network-oriented operations which only make sense
-     to put in the library on systems that support the Internet.
-
-`configure'
-     This file is a shell script fragment to be run at configuration
-     time.  The top-level `configure' script uses the shell `.' command
-     to read the `configure' file in each system-dependent directory
-     chosen, in order.  The `configure' files are often generated from
-     `configure.in' files using Autoconf.
-
-     A system-dependent `configure' script will usually add things to
-     the shell variables `DEFS' and `config_vars'; see the top-level
-     `configure' script for details.  The script can check for
-     `--with-PACKAGE' options that were passed to the top-level
-     `configure'.  For an option `--with-PACKAGE=VALUE' `configure'
-     sets the shell variable `with_PACKAGE' (with any dashes in PACKAGE
-     converted to underscores) to VALUE; if the option is just
-     `--with-PACKAGE' (no argument), then it sets `with_PACKAGE' to
-     `yes'.
-
-`configure.in'
-     This file is an Autoconf input fragment to be processed into the
-     file `configure' in this subdirectory.  *Note Introduction:
-     (autoconf.info)Introduction, for a description of Autoconf.  You
-     should write either `configure' or `configure.in', but not both.
-     The first line of `configure.in' should invoke the `m4' macro
-     `GLIBC_PROVIDES'.  This macro does several `AC_PROVIDE' calls for
-     Autoconf macros which are used by the top-level `configure'
-     script; without this, those macros might be invoked again
-     unnecessarily by Autoconf.
-
-   That is the general system for how system-dependencies are isolated.
-
-* Menu:
-
-* Hierarchy Conventions::       The layout of the `sysdeps' hierarchy.
-* Porting to Unix::             Porting the library to an average
-                                   Unix-like system.
-
-
-File: libc.info,  Node: Hierarchy Conventions,  Next: Porting to Unix,  Up: Porting
-
-D.2.1 Layout of the `sysdeps' Directory Hierarchy
--------------------------------------------------
-
-A GNU configuration name has three parts: the CPU type, the
-manufacturer's name, and the operating system.  `configure' uses these
-to pick the list of system-dependent directories to look for.  If the
-`--nfp' option is _not_ passed to `configure', the directory
-`MACHINE/fpu' is also used.  The operating system often has a "base
-operating system"; for example, if the operating system is `Linux', the
-base operating system is `unix/sysv'.  The algorithm used to pick the
-list of directories is simple: `configure' makes a list of the base
-operating system, manufacturer, CPU type, and operating system, in that
-order.  It then concatenates all these together with slashes in
-between, to produce a directory name; for example, the configuration
-`i686-linux-gnu' results in `unix/sysv/linux/i386/i686'.  `configure'
-then tries removing each element of the list in turn, so
-`unix/sysv/linux' and `unix/sysv' are also tried, among others.  Since
-the precise version number of the operating system is often not
-important, and it would be very inconvenient, for example, to have
-identical `irix6.2' and `irix6.3' directories, `configure' tries
-successively less specific operating system names by removing trailing
-suffixes starting with a period.
-
-   As an example, here is the complete list of directories that would be
-tried for the configuration `i686-linux-gnu' (with the `crypt' and
-`linuxthreads' add-on):
-
-     sysdeps/i386/elf
-     crypt/sysdeps/unix
-     linuxthreads/sysdeps/unix/sysv/linux
-     linuxthreads/sysdeps/pthread
-     linuxthreads/sysdeps/unix/sysv
-     linuxthreads/sysdeps/unix
-     linuxthreads/sysdeps/i386/i686
-     linuxthreads/sysdeps/i386
-     linuxthreads/sysdeps/pthread/no-cmpxchg
-     sysdeps/unix/sysv/linux/i386
-     sysdeps/unix/sysv/linux
-     sysdeps/gnu
-     sysdeps/unix/common
-     sysdeps/unix/mman
-     sysdeps/unix/inet
-     sysdeps/unix/sysv/i386/i686
-     sysdeps/unix/sysv/i386
-     sysdeps/unix/sysv
-     sysdeps/unix/i386
-     sysdeps/unix
-     sysdeps/posix
-     sysdeps/i386/i686
-     sysdeps/i386/i486
-     sysdeps/libm-i387/i686
-     sysdeps/i386/fpu
-     sysdeps/libm-i387
-     sysdeps/i386
-     sysdeps/wordsize-32
-     sysdeps/ieee754
-     sysdeps/libm-ieee754
-     sysdeps/generic
-
-   Different machine architectures are conventionally subdirectories at
-the top level of the `sysdeps' directory tree.  For example,
-`sysdeps/sparc' and `sysdeps/m68k'.  These contain files specific to
-those machine architectures, but not specific to any particular
-operating system.  There might be subdirectories for specializations of
-those architectures, such as `sysdeps/m68k/68020'. Code which is
-specific to the floating-point coprocessor used with a particular
-machine should go in `sysdeps/MACHINE/fpu'.
-
-   There are a few directories at the top level of the `sysdeps'
-hierarchy that are not for particular machine architectures.
-
-`generic'
-     As described above (*note Porting::), this is the subdirectory
-     that every configuration implicitly uses after all others.
-
-`ieee754'
-     This directory is for code using the IEEE 754 floating-point
-     format, where the C type `float' is IEEE 754 single-precision
-     format, and `double' is IEEE 754 double-precision format.  Usually
-     this directory is referred to in the `Implies' file in a machine
-     architecture-specific directory, such as `m68k/Implies'.
-
-`libm-ieee754'
-     This directory contains an implementation of a mathematical library
-     usable on platforms which use IEEE 754 conformant floating-point
-     arithmetic.
-
-`libm-i387'
-     This is a special case.  Ideally the code should be in
-     `sysdeps/i386/fpu' but for various reasons it is kept aside.
-
-`posix'
-     This directory contains implementations of things in the library in
-     terms of POSIX.1 functions.  This includes some of the POSIX.1
-     functions themselves.  Of course, POSIX.1 cannot be completely
-     implemented in terms of itself, so a configuration using just
-     `posix' cannot be complete.
-
-`unix'
-     This is the directory for Unix-like things.  *Note Porting to
-     Unix::.  `unix' implies `posix'.  There are some special-purpose
-     subdirectories of `unix':
-
-    `unix/common'
-          This directory is for things common to both BSD and System V
-          release 4.  Both `unix/bsd' and `unix/sysv/sysv4' imply
-          `unix/common'.
-
-    `unix/inet'
-          This directory is for `socket' and related functions on Unix
-          systems.  `unix/inet/Subdirs' enables the `inet' top-level
-          subdirectory.  `unix/common' implies `unix/inet'.
-
-`mach'
-     This is the directory for things based on the Mach microkernel
-     from CMU (including GNU/Hurd systems).  Other basic operating
-     systems (VMS, for example) would have their own directories at the
-     top level of the `sysdeps' hierarchy, parallel to `unix' and
-     `mach'.
-
-
-File: libc.info,  Node: Porting to Unix,  Prev: Hierarchy Conventions,  Up: Porting
-
-D.2.2 Porting the GNU C Library to Unix Systems
------------------------------------------------
-
-Most Unix systems are fundamentally very similar.  There are variations
-between different machines, and variations in what facilities are
-provided by the kernel.  But the interface to the operating system
-facilities is, for the most part, pretty uniform and simple.
-
-   The code for Unix systems is in the directory `unix', at the top
-level of the `sysdeps' hierarchy.  This directory contains
-subdirectories (and subdirectory trees) for various Unix variants.
-
-   The functions which are system calls in most Unix systems are
-implemented in assembly code, which is generated automatically from
-specifications in files named `syscalls.list'.  There are several such
-files, one in `sysdeps/unix' and others in its subdirectories.  Some
-special system calls are implemented in files that are named with a
-suffix of `.S'; for example, `_exit.S'.  Files ending in `.S' are run
-through the C preprocessor before being fed to the assembler.
-
-   These files all use a set of macros that should be defined in
-`sysdep.h'.  The `sysdep.h' file in `sysdeps/unix' partially defines
-them; a `sysdep.h' file in another directory must finish defining them
-for the particular machine and operating system variant.  See
-`sysdeps/unix/sysdep.h' and the machine-specific `sysdep.h'
-implementations to see what these macros are and what they should do.
-
-   The system-specific makefile for the `unix' directory
-(`sysdeps/unix/Makefile') gives rules to generate several files from
-the Unix system you are building the library on (which is assumed to be
-the target system you are building the library _for_).  All the
-generated files are put in the directory where the object files are
-kept; they should not affect the source tree itself.  The files
-generated are `ioctls.h', `errnos.h', `sys/param.h', and `errlist.c'
-(for the `stdio' section of the library).
-
-
-File: libc.info,  Node: Platform,  Next: Contributors,  Prev: Maintenance,  Up: Top
-
-Appendix E Platform-specific facilities
-***************************************
-
-The GNU C Library can provide machine-specific functionality.
-
-* Menu:
-
-* PowerPC::           Facilities Specific to the PowerPC Architecture
 

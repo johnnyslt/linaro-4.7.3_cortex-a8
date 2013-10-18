@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -2243,13 +2252,12 @@ namespace.
 
        /* The size of the address is
           the offset of the start of the filename,
-          plus its length,
-          plus one for the terminating null byte.
+          plus its length (not including the terminating null byte).
           Alternatively you can just do:
           size = SUN_LEN (&name);
       */
        size = (offsetof (struct sockaddr_un, sun_path)
-               + strlen (name.sun_path) + 1);
+               + strlen (name.sun_path));
 
        if (bind (sock, (struct sockaddr *) &name, size) < 0)
          {
@@ -2307,12 +2315,12 @@ information about this.
 * Internet Address Formats::    How socket addresses are specified in the
                                  Internet namespace.
 * Host Addresses::	        All about host addresses of Internet host.
-* Protocols Database::		Referring to protocols by name.
 * Ports::			Internet port numbers.
 * Services Database::           Ports may have symbolic names.
 * Byte Order::		        Different hosts may use different byte
                                  ordering conventions; you need to
                                  canonicalize host address and port number.
+* Protocols Database::		Referring to protocols by name.
 * Inet Example::	        Putting it all together.
 
 
@@ -2373,7 +2381,7 @@ Internet namespace socket address.
 
 
 
-File: libc.info,  Node: Host Addresses,  Next: Protocols Database,  Prev: Internet Address Formats,  Up: Internet Namespace
+File: libc.info,  Node: Host Addresses,  Next: Ports,  Prev: Internet Address Formats,  Up: Internet Namespace
 
 16.6.2 Host Addresses
 ---------------------
@@ -2652,7 +2660,7 @@ Order::, for an explanation of network and host byte order.
      responsibility to make sure the buffer is large enough.
 
  -- Function: const char * inet_ntop (int AF, const void *CP, char
-          *BUF, size_t LEN)
+          *BUF, socklen_t LEN)
      This function converts an Internet address (either IPv4 or IPv6)
      from network (binary) to presentation (textual) form.  AF should be
      either `AF_INET' or `AF_INET6', as appropriate.  CP is a pointer
@@ -2735,8 +2743,8 @@ use `getaddrinfo' and `getnameinfo' to obtain this information.
      the caller to specify the desired address family (e.g.  `AF_INET'
      or `AF_INET6') of the result.
 
- -- Function: struct hostent * gethostbyaddr (const char *ADDR, size_t
-          LENGTH, int FORMAT)
+ -- Function: struct hostent * gethostbyaddr (const void *ADDR,
+          socklen_t LENGTH, int FORMAT)
      The `gethostbyaddr' function returns information about the host
      with Internet address ADDR.  The parameter ADDR is not really a
      pointer to char - it can be a pointer to an IPv4 or an IPv6
@@ -2830,10 +2838,10 @@ used in this context.
      allows the caller to specify the desired address family (e.g.
      `AF_INET' or `AF_INET6') for the result.
 
- -- Function: int gethostbyaddr_r (const char *ADDR, size_t LENGTH, int
-          FORMAT, struct hostent *restrict RESULT_BUF, char *restrict
-          BUF, size_t BUFLEN, struct hostent **restrict RESULT, int
-          *restrict H_ERRNOP)
+ -- Function: int gethostbyaddr_r (const void *ADDR, socklen_t LENGTH,
+          int FORMAT, struct hostent *restrict RESULT_BUF, char
+          *restrict BUF, size_t BUFLEN, struct hostent **restrict
+          RESULT, int *restrict H_ERRNOP)
      The `gethostbyaddr_r' function returns information about the host
      with Internet address ADDR.  The parameter ADDR is not really a
      pointer to char - it can be a pointer to an IPv4 or an IPv6
@@ -2870,7 +2878,7 @@ these functions because they are not reentrant.
      This function closes the hosts database.
 
 
-File: libc.info,  Node: Ports,  Next: Services Database,  Prev: Protocols Database,  Up: Internet Namespace
+File: libc.info,  Node: Ports,  Next: Services Database,  Prev: Host Addresses,  Up: Internet Namespace
 
 16.6.3 Internet Ports
 ---------------------
@@ -2987,7 +2995,7 @@ because they are not reentrant.
      This function closes the services database.
 
 
-File: libc.info,  Node: Byte Order,  Next: Inet Example,  Prev: Services Database,  Up: Internet Namespace
+File: libc.info,  Node: Byte Order,  Next: Protocols Database,  Prev: Services Database,  Up: Internet Namespace
 
 16.6.5 Byte Order Conversion
 ----------------------------
@@ -3042,7 +3050,7 @@ functions are declared in `netinet/in.h'.
      This is used for IPv4 Internet addresses.
 
 
-File: libc.info,  Node: Protocols Database,  Next: Ports,  Prev: Host Addresses,  Up: Internet Namespace
+File: libc.info,  Node: Protocols Database,  Next: Inet Example,  Prev: Byte Order,  Up: Internet Namespace
 
 16.6.6 Protocols Database
 -------------------------
@@ -3122,7 +3130,7 @@ careful when using these functions because they are not reentrant.
      This function closes the protocols database.
 
 
-File: libc.info,  Node: Inet Example,  Prev: Byte Order,  Up: Internet Namespace
+File: libc.info,  Node: Inet Example,  Prev: Protocols Database,  Up: Internet Namespace
 
 16.6.7 Internet Socket Example
 ------------------------------
@@ -3662,8 +3670,8 @@ of `send'; see *note I/O Primitives::.  If the socket was connected but
 the connection has broken, you get a `SIGPIPE' signal for any use of
 `send' or `write' (*note Miscellaneous Signals::).
 
- -- Function: int send (int SOCKET, void *BUFFER, size_t SIZE, int
-          FLAGS)
+ -- Function: ssize_t send (int SOCKET, const void *BUFFER, size_t
+          SIZE, int FLAGS)
      The `send' function is like `write', but with the additional flags
      FLAGS.  The possible values of FLAGS are described in *note Socket
      Data Options::.
@@ -3726,7 +3734,7 @@ The `recv' function is declared in the header file `sys/socket.h'.  If
 your FLAGS argument is zero, you can just as well use `read' instead of
 `recv'; see *note I/O Primitives::.
 
- -- Function: int recv (int SOCKET, void *BUFFER, size_t SIZE, int
+ -- Function: ssize_t recv (int SOCKET, void *BUFFER, size_t SIZE, int
           FLAGS)
      The `recv' function is like `read', but with the additional flags
      FLAGS.  The possible values of FLAGS are described in *note Socket
@@ -4195,8 +4203,8 @@ packet there.  You can cancel the default destination by calling
 `connect' using an address format of `AF_UNSPEC' in the ADDR argument.
 *Note Connecting::, for more information about the `connect' function.
 
- -- Function: int sendto (int SOCKET, void *BUFFER, size_t SIZE, int
-          FLAGS, struct sockaddr *ADDR, socklen_t LENGTH)
+ -- Function: ssize_t sendto (int SOCKET, const void *BUFFER, size_t
+          SIZE, int FLAGS, struct sockaddr *ADDR, socklen_t LENGTH)
      The `sendto' function transmits the data in the BUFFER through the
      socket SOCKET to the destination address specified by the ADDR and
      LENGTH arguments.  The SIZE argument specifies the number of bytes
@@ -4229,8 +4237,8 @@ The `recvfrom' function reads a packet from a datagram socket and also
 tells you where it was sent from.  This function is declared in
 `sys/socket.h'.
 
- -- Function: int recvfrom (int SOCKET, void *BUFFER, size_t SIZE, int
-          FLAGS, struct sockaddr *ADDR, socklen_t *LENGTH-PTR)
+ -- Function: ssize_t recvfrom (int SOCKET, void *BUFFER, size_t SIZE,
+          int FLAGS, struct sockaddr *ADDR, socklen_t *LENGTH-PTR)
      The `recvfrom' function reads one packet from the socket SOCKET
      into the buffer BUFFER.  The SIZE argument specifies the maximum
      number of bytes to be read.
@@ -4568,8 +4576,8 @@ They are declared in `sys/socket.h'.
     `ENOPROTOOPT'
           The OPTNAME doesn't make sense for the given LEVEL.
 
- -- Function: int setsockopt (int SOCKET, int LEVEL, int OPTNAME, void
-          *OPTVAL, socklen_t OPTLEN)
+ -- Function: int setsockopt (int SOCKET, int LEVEL, int OPTNAME, const
+          void *OPTVAL, socklen_t OPTLEN)
      This function is used to set the socket option OPTNAME at level
      LEVEL for socket SOCKET.  The value of the option is passed in the
      buffer OPTVAL of size OPTLEN.
@@ -4711,8 +4719,7 @@ copy the information if you need to save it.
      The `getnetbyname' function returns information about the network
      named NAME.  It returns a null pointer if there is no such network.
 
- -- Function: struct netent * getnetbyaddr (unsigned long int NET, int
-          TYPE)
+ -- Function: struct netent * getnetbyaddr (uint32_t NET, int TYPE)
      The `getnetbyaddr' function returns information about the network
      of type TYPE with number NET.  You should specify a value of
      `AF_INET' for the TYPE argument for Internet networks.
@@ -6092,7 +6099,7 @@ many kernels, including Linux.
      `gtty' sets *ATTRIBUTES to describe the terminal attributes of the
      terminal which is open with file descriptor FILEDES.
 
- -- Function: int stty (int FILEDES, struct sgttyb *ATTRIBUTES)
+ -- Function: int stty (int FILEDES, const struct sgttyb *ATTRIBUTES)
      This function sets the attributes of a terminal.
 
      `stty' sets the terminal attributes of the terminal which is open
@@ -6786,7 +6793,8 @@ File: libc.info,  Node: syslog; vsyslog,  Next: closelog,  Prev: openlog,  Up: S
 The symbols referred to in this section are declared in the file
 `syslog.h'.
 
- -- Function: void syslog (int FACILITY_PRIORITY, char *FORMAT, ...)
+ -- Function: void syslog (int FACILITY_PRIORITY, const char *FORMAT,
+          ...)
      `syslog' submits a message to the Syslog facility.  It does this by
      writing to the Unix domain socket `/dev/log'.
 
@@ -6922,7 +6930,7 @@ The symbols referred to in this section are declared in the file
                   "Unable to make network connection to %s.  Error=%m", host);
 
 
- -- Function: void vsyslog (int FACILITY_PRIORITY, char *FORMAT,
+ -- Function: void vsyslog (int FACILITY_PRIORITY, const char *FORMAT,
           va_list ARGLIST)
      This is functionally identical to `syslog', with the BSD style
      variable length argument.

@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -3766,15 +3775,13 @@ disk.
 special functions which ensure that all operations finish before they
 return.
 
- -- Function: int sync (void)
+ -- Function: void sync (void)
      A call to this function will not return as long as there is data
      which has not been written to the device.  All dirty buffers in
      the kernel will be written and so an overall consistent system can
      be achieved (if no other process in parallel writes data).
 
      A prototype for `sync' can be found in `unistd.h'.
-
-     The return value is zero to indicate no error.
 
    Programs more often want to ensure that data written to a given file
 is committed, rather than all data in the system.  For this, `sync' is
@@ -4080,7 +4087,7 @@ File: libc.info,  Node: Asynchronous Reads/Writes,  Next: Status of AIO Operatio
      function is in fact `aio_read64' since the LFS interface
      transparently replaces the normal implementation.
 
- -- Function: int aio_read64 (struct aiocb *AIOCBP)
+ -- Function: int aio_read64 (struct aiocb64 *AIOCBP)
      This function is similar to the `aio_read' function.  The only
      difference is that on 32 bit machines, the file descriptor should
      be opened in the large file mode.  Internally, `aio_read64' uses
@@ -4162,7 +4169,7 @@ pair of functions with a very similar interface.
      function is in fact `aio_write64' since the LFS interface
      transparently replaces the normal implementation.
 
- -- Function: int aio_write64 (struct aiocb *AIOCBP)
+ -- Function: int aio_write64 (struct aiocb64 *AIOCBP)
      This function is similar to the `aio_write' function.  The only
      difference is that on 32 bit machines the file descriptor should
      be opened in the large file mode.  Internally `aio_write64' uses
@@ -4264,8 +4271,8 @@ operations.  It is therefore similar to a combination of `readv' and
      function is in fact `lio_listio64' since the LFS interface
      transparently replaces the normal implementation.
 
- -- Function: int lio_listio64 (int MODE, struct aiocb *const LIST, int
-          NENT, struct sigevent *SIG)
+ -- Function: int lio_listio64 (int MODE, struct aiocb64 *const LIST[],
+          int NENT, struct sigevent *SIG)
      This function is similar to the `lio_listio' function.  The only
      difference is that on 32 bit machines, the file descriptor should
      be opened in the large file mode.  Internally, `lio_listio64' uses
@@ -4321,7 +4328,7 @@ functions allow you to get this kind of information.
      transparently replaces the interface for small files on 32 bit
      machines.
 
- -- Function: ssize_t aio_return (const struct aiocb *AIOCBP)
+ -- Function: ssize_t aio_return (struct aiocb *AIOCBP)
      This function can be used to retrieve the return status of the
      operation carried out by the request described in the variable
      pointed to by AIOCBP.  As long as the error status of this request
@@ -4341,7 +4348,7 @@ functions allow you to get this kind of information.
      function is in fact `aio_return64' since the LFS interface
      transparently replaces the normal implementation.
 
- -- Function: int aio_return64 (const struct aiocb64 *AIOCBP)
+ -- Function: ssize_t aio_return64 (struct aiocb64 *AIOCBP)
      This function is similar to `aio_return' with the only difference
      that the argument is a reference to a variable of type `struct
      aiocb64'.
@@ -4402,8 +4409,7 @@ the symbol `_POSIX_SYNCHRONIZED_IO' is defined in `unistd.h'.
           resources.
 
     `EBADF'
-          The file descriptor `aiocbp->aio_fildes' is not valid or not
-          open for writing.
+          The file descriptor `AIOCBP->aio_fildes' is not valid.
 
     `EINVAL'
           The implementation does not support I/O synchronization or
@@ -6110,7 +6116,7 @@ the result.
 
  -- Function: int scandir (const char *DIR, struct dirent ***NAMELIST,
           int (*SELECTOR) (const struct dirent *), int (*CMP) (const
-          void *, const void *))
+          struct dirent **, const struct dirent **))
      The `scandir' function scans the contents of the directory selected
      by DIR.  The result in *NAMELIST is an array of pointers to
      structure of type `struct dirent' which describe all selected
@@ -6156,7 +6162,7 @@ this we need a new function.
 
  -- Function: int scandir64 (const char *DIR, struct dirent64
           ***NAMELIST, int (*SELECTOR) (const struct dirent64 *), int
-          (*CMP) (const void *, const void *))
+          (*CMP) (const struct dirent64 **, const struct dirent64 **))
      The `scandir64' function works like the `scandir' function except
      that the directory entries it returns are described by elements of
      type `struct dirent64'.  The function pointed to by SELECTOR is
@@ -6635,8 +6641,8 @@ limit if it exists is published in the `sys/param.h' header file.
           the disk.
 
 
- -- Function: int readlink (const char *FILENAME, char *BUFFER, size_t
-          SIZE)
+ -- Function: ssize_t readlink (const char *FILENAME, char *BUFFER,
+          size_t SIZE)
      The `readlink' function gets the value of the symbolic link
      FILENAME.  The file name that the link points to is copied into
      BUFFER.  This file name string is _not_ null-terminated;
@@ -7488,7 +7494,7 @@ the `chown' function.  This is the primitive for the `chown' and
     `EROFS'
           The file is on a read-only file system.
 
- -- Function: int fchown (int FILEDES, int OWNER, int GROUP)
+ -- Function: int fchown (int FILEDES, uid_t OWNER, gid_t GROUP)
      This is like `chown', except that it changes the owner of the open
      file with descriptor FILEDES.
 
@@ -7765,7 +7771,7 @@ function.
           to just clear the bit in MODE and call `chmod' again.  *Note
           Permission Bits::, for full details on the sticky bit.
 
- -- Function: int fchmod (int FILEDES, int MODE)
+ -- Function: int fchmod (int FILEDES, mode_t MODE)
      This is like `chmod', except that it changes the permissions of the
      currently open file given by FILEDES.
 
@@ -7972,7 +7978,8 @@ Calendar::.
 fractional part of the file times.  The prototype for this function is
 in the header file `sys/time.h'.  
 
- -- Function: int utimes (const char *FILENAME, struct timeval TVP[2])
+ -- Function: int utimes (const char *FILENAME, const struct timeval
+          TVP[2])
      This function sets the file access and modification times of the
      file FILENAME.  The new file access time is specified by `TVP[0]',
      and the new modification time by `TVP[1]'.  Similar to `utime', if
@@ -7983,7 +7990,8 @@ in the header file `sys/time.h'.
      The return values and error conditions are the same as for the
      `utime' function.
 
- -- Function: int lutimes (const char *FILENAME, struct timeval TVP[2])
+ -- Function: int lutimes (const char *FILENAME, const struct timeval
+          TVP[2])
      This function is like `utimes', except that it does not follow
      symbolic links.  If FILENAME is the name of a symbolic link,
      `lutimes' sets the file access and modification times of the
@@ -7996,7 +8004,7 @@ in the header file `sys/time.h'.
      The return values and error conditions are the same as for the
      `utime' function.
 
- -- Function: int futimes (int FD, struct timeval TVP[2])
+ -- Function: int futimes (int FD, const struct timeval TVP[2])
      This function is like `utimes', except that it takes an open file
      descriptor as an argument instead of a file name.  *Note Low-Level
      I/O::.  This function comes from FreeBSD, and is not available on
@@ -8211,7 +8219,7 @@ function for compatibility with BSD.
 
    The prototype for `mknod' is declared in `sys/stat.h'.  
 
- -- Function: int mknod (const char *FILENAME, int MODE, int DEV)
+ -- Function: int mknod (const char *FILENAME, mode_t MODE, dev_t DEV)
      The `mknod' function makes a special file with name FILENAME.  The
      MODE specifies the mode of the file, and may include the various
      special file bits, such as `S_IFCHR' (for a character special file)

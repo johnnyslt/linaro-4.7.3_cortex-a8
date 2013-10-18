@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -1722,6 +1731,12 @@ Function and Macro Index
 * __fwriting:                            Opening Streams.     (line 220)
 * __ppc_get_timebase:                    PowerPC.             (line  10)
 * __ppc_get_timebase_freq:               PowerPC.             (line  23)
+* __ppc_mdoio:                           PowerPC.             (line  43)
+* __ppc_mdoom:                           PowerPC.             (line  49)
+* __ppc_set_ppr_low:                     PowerPC.             (line  68)
+* __ppc_set_ppr_med:                     PowerPC.             (line  55)
+* __ppc_set_ppr_med_low:                 PowerPC.             (line  71)
+* __ppc_yield:                           PowerPC.             (line  38)
 * __va_copy:                             Argument Macros.     (line  47)
 * _Exit:                                 Termination Internals.
                                                               (line  15)
@@ -1766,7 +1781,7 @@ Function and Macro Index
 * aio_fsync:                             Synchronizing AIO Operations.
                                                               (line  18)
 * aio_fsync64:                           Synchronizing AIO Operations.
-                                                              (line  66)
+                                                              (line  65)
 * aio_init:                              Configuration of AIO.
                                                               (line  47)
 * aio_read:                              Asynchronous Reads/Writes.
@@ -1778,9 +1793,9 @@ Function and Macro Index
 * aio_return64:                          Status of AIO Operations.
                                                               (line  63)
 * aio_suspend:                           Synchronizing AIO Operations.
-                                                              (line  90)
+                                                              (line  89)
 * aio_suspend64:                         Synchronizing AIO Operations.
-                                                              (line 127)
+                                                              (line 126)
 * aio_write:                             Asynchronous Reads/Writes.
                                                               (line  89)
 * aio_write64:                           Asynchronous Reads/Writes.
@@ -2112,7 +2127,7 @@ Function and Macro Index
 * endgrent:                              Scanning All Groups. (line  66)
 * endhostent:                            Host Names.          (line 207)
 * endmntent:                             mtab.                (line 122)
-* endnetent:                             Networks Database.   (line  67)
+* endnetent:                             Networks Database.   (line  66)
 * endnetgrent:                           Lookup Netgroup.     (line  65)
 * endprotoent:                           Protocols Database.  (line  78)
 * endpwent:                              Scanning All Users.  (line  66)
@@ -2185,7 +2200,7 @@ Function and Macro Index
 * FD_ISSET:                              Waiting for I/O.     (line  65)
 * FD_SET:                                Waiting for I/O.     (line  53)
 * FD_ZERO:                               Waiting for I/O.     (line  49)
-* fdatasync:                             Synchronizing I/O.   (line  62)
+* fdatasync:                             Synchronizing I/O.   (line  60)
 * fdim:                                  Misc FP Arithmetic.  (line  31)
 * fdimf:                                 Misc FP Arithmetic.  (line  32)
 * fdiml:                                 Misc FP Arithmetic.  (line  33)
@@ -2238,11 +2253,11 @@ Function and Macro Index
 * fileno_unlocked:                       Descriptors and Streams.
                                                               (line  43)
 * finite:                                Floating Point Classes.
-                                                              (line  92)
+                                                              (line  97)
 * finitef:                               Floating Point Classes.
-                                                              (line  93)
+                                                              (line  98)
 * finitel:                               Floating Point Classes.
-                                                              (line  94)
+                                                              (line  99)
 * flockfile:                             Streams and Threads. (line  31)
 * floor:                                 Rounding Functions.  (line  25)
 * floorf:                                Rounding Functions.  (line  26)
@@ -2305,7 +2320,7 @@ Function and Macro Index
                                                               (line 110)
 * fstat:                                 Reading Attributes.  (line  43)
 * fstat64:                               Reading Attributes.  (line  58)
-* fsync:                                 Synchronizing I/O.   (line  30)
+* fsync:                                 Synchronizing I/O.   (line  28)
 * ftell:                                 File Positioning.    (line  22)
 * ftello:                                File Positioning.    (line  31)
 * ftello64:                              File Positioning.    (line  52)
@@ -2317,7 +2332,7 @@ Function and Macro Index
 * ftw64:                                 Working with Directory Trees.
                                                               (line 176)
 * funlockfile:                           Streams and Threads. (line  47)
-* futimes:                               File Times.          (line 121)
+* futimes:                               File Times.          (line 123)
 * fwide:                                 Streams and I18N.    (line  59)
 * fwprintf:                              Formatted Output Functions.
                                                               (line  30)
@@ -2380,12 +2395,12 @@ Function and Macro Index
 * getlogin:                              Who Logged In.       (line  17)
 * getmntent:                             mtab.                (line 130)
 * getmntent_r:                           mtab.                (line 155)
-* getnetbyaddr:                          Networks Database.   (line  43)
+* getnetbyaddr:                          Networks Database.   (line  42)
 * getnetbyname:                          Networks Database.   (line  38)
-* getnetent:                             Networks Database.   (line  63)
+* getnetent:                             Networks Database.   (line  62)
 * getnetgrent:                           Lookup Netgroup.     (line  36)
 * getnetgrent_r:                         Lookup Netgroup.     (line  50)
-* getopt:                                Using Getopt.        (line  35)
+* getopt:                                Using Getopt.        (line  36)
 * getopt_long:                           Getopt Long Options. (line  44)
 * getopt_long_only:                      Getopt Long Options. (line  95)
 * getpagesize:                           Query Memory Parameters.
@@ -2454,14 +2469,16 @@ Function and Macro Index
 * getwchar:                              Character Input.     (line  71)
 * getwchar_unlocked:                     Character Input.     (line  79)
 * getwd:                                 Working Directory.   (line  76)
-* glob:                                  Calling Glob.        (line 162)
-* glob64:                                Calling Glob.        (line 218)
+* glob:                                  Calling Glob.        (line 176)
+* glob64:                                Calling Glob.        (line 232)
 * globfree:                              More Flags for Globbing.
                                                               (line 124)
 * globfree64:                            More Flags for Globbing.
                                                               (line 130)
 * gmtime:                                Broken-down Time.    (line 120)
 * gmtime_r:                              Broken-down Time.    (line 132)
+* grantpt <1>:                           Configuring and compiling.
+                                                              (line 124)
 * grantpt:                               Allocation.          (line  23)
 * gsignal:                               Signaling Yourself.  (line  16)
 * gtty:                                  BSD Terminal Modes.  (line  35)
@@ -2551,11 +2568,11 @@ Function and Macro Index
 * isgreaterequal:                        FP Comparison Functions.
                                                               (line  25)
 * isinf:                                 Floating Point Classes.
-                                                              (line  73)
+                                                              (line  78)
 * isinff:                                Floating Point Classes.
-                                                              (line  74)
+                                                              (line  79)
 * isinfl:                                Floating Point Classes.
-                                                              (line  75)
+                                                              (line  80)
 * isless:                                FP Comparison Functions.
                                                               (line  30)
 * islessequal:                           FP Comparison Functions.
@@ -2567,15 +2584,17 @@ Function and Macro Index
 * isnan:                                 Floating Point Classes.
                                                               (line  61)
 * isnanf:                                Floating Point Classes.
-                                                              (line  80)
+                                                              (line  85)
 * isnanl:                                Floating Point Classes.
-                                                              (line  81)
+                                                              (line  86)
 * isnormal:                              Floating Point Classes.
                                                               (line  55)
 * isprint:                               Classification of Characters.
                                                               (line  96)
 * ispunct:                               Classification of Characters.
                                                               (line  59)
+* issignaling:                           Floating Point Classes.
+                                                              (line  67)
 * isspace:                               Classification of Characters.
                                                               (line  63)
 * isunordered:                           FP Comparison Functions.
@@ -2713,7 +2732,7 @@ Function and Macro Index
                                                               (line  97)
 * lstat:                                 Reading Attributes.  (line  69)
 * lstat64:                               Reading Attributes.  (line  79)
-* lutimes:                               File Times.          (line 108)
+* lutimes:                               File Times.          (line 110)
 * madvise:                               Memory-mapped I/O.   (line 237)
 * main:                                  Program Arguments.   (line   6)
 * makecontext:                           System V contexts.   (line  74)
@@ -2900,6 +2919,8 @@ Function and Macro Index
 * printf_size_info:                      Predefined Printf Handlers.
                                                               (line  42)
 * psignal:                               Signal Messages.     (line  25)
+* pthread_getattr_default_np:            Default Thread Attributes.
+                                                              (line  10)
 * ptsname:                               Allocation.          (line  74)
 * ptsname_r:                             Allocation.          (line  81)
 * putc:                                  Simple Output.       (line  33)
@@ -2992,19 +3013,19 @@ Function and Macro Index
 * scalbf:                                Normalization Functions.
                                                               (line  50)
 * scalbl:                                Normalization Functions.
-                                                              (line  51)
+                                                              (line  52)
 * scalbln:                               Normalization Functions.
-                                                              (line  60)
-* scalblnf:                              Normalization Functions.
                                                               (line  61)
-* scalblnl:                              Normalization Functions.
+* scalblnf:                              Normalization Functions.
                                                               (line  62)
+* scalblnl:                              Normalization Functions.
+                                                              (line  63)
 * scalbn:                                Normalization Functions.
-                                                              (line  54)
-* scalbnf:                               Normalization Functions.
                                                               (line  55)
-* scalbnl:                               Normalization Functions.
+* scalbnf:                               Normalization Functions.
                                                               (line  56)
+* scalbnl:                               Normalization Functions.
+                                                              (line  57)
 * scandir:                               Scanning Directory Content.
                                                               (line  14)
 * scandir64:                             Scanning Directory Content.
@@ -3012,23 +3033,23 @@ Function and Macro Index
 * scanf:                                 Formatted Input Functions.
                                                               (line  10)
 * sched_get_priority_max:                Basic Scheduling Functions.
-                                                              (line 157)
+                                                              (line 156)
 * sched_get_priority_min:                Basic Scheduling Functions.
-                                                              (line 143)
+                                                              (line 142)
 * sched_getaffinity:                     CPU Affinity.        (line  99)
 * sched_getparam:                        Basic Scheduling Functions.
-                                                              (line 122)
+                                                              (line 121)
 * sched_getscheduler:                    Basic Scheduling Functions.
                                                               (line  86)
 * sched_rr_get_interval:                 Basic Scheduling Functions.
-                                                              (line 172)
+                                                              (line 171)
 * sched_setaffinity:                     CPU Affinity.        (line 122)
 * sched_setparam:                        Basic Scheduling Functions.
                                                               (line 114)
 * sched_setscheduler:                    Basic Scheduling Functions.
                                                               (line  36)
 * sched_yield:                           Basic Scheduling Functions.
-                                                              (line 188)
+                                                              (line 187)
 * secure_getenv:                         Environment Access.  (line  24)
 * seed48:                                SVID Random.         (line 105)
 * seed48_r:                              SVID Random.         (line 268)
@@ -3062,7 +3083,7 @@ Function and Macro Index
 * setlocale:                             Setting the Locale.  (line  25)
 * setlogmask:                            setlogmask.          (line  10)
 * setmntent:                             mtab.                (line 110)
-* setnetent:                             Networks Database.   (line  54)
+* setnetent:                             Networks Database.   (line  53)
 * setnetgrent:                           Lookup Netgroup.     (line  13)
 * setpgid:                               Process Group Functions.
                                                               (line  83)
@@ -3109,11 +3130,11 @@ Function and Macro Index
                                                               (line  21)
 * signbit:                               FP Bit Twiddling.    (line  24)
 * significand:                           Normalization Functions.
-                                                              (line  66)
-* significandf:                          Normalization Functions.
                                                               (line  67)
-* significandl:                          Normalization Functions.
+* significandf:                          Normalization Functions.
                                                               (line  68)
+* significandl:                          Normalization Functions.
+                                                              (line  69)
 * sigpause:                              Blocking in BSD.     (line  29)
 * sigpending:                            Checking for Pending Signals.
                                                               (line  10)
@@ -3239,13 +3260,13 @@ Function and Macro Index
 * swprintf:                              Formatted Output Functions.
                                                               (line  56)
 * swscanf:                               Formatted Input Functions.
-                                                              (line  50)
+                                                              (line  51)
 * symlink:                               Symbolic Links.      (line  46)
 * sync:                                  Synchronizing I/O.   (line  16)
 * syscall:                               System Calls.        (line  40)
 * sysconf:                               Sysconf Definition.  (line   7)
-* sysctl:                                System Parameters.   (line  13)
-* syslog:                                syslog; vsyslog.     (line  10)
+* sysctl:                                System Parameters.   (line  14)
+* syslog:                                syslog; vsyslog.     (line  11)
 * system:                                Running a Command.   (line  12)
 * sysv_signal:                           Basic Signal Handling.
                                                               (line 129)
@@ -3335,7 +3356,7 @@ Function and Macro Index
 * updwtmp:                               Manipulating the Database.
                                                               (line 276)
 * utime:                                 File Times.          (line  51)
-* utimes:                                File Times.          (line  97)
+* utimes:                                File Times.          (line  98)
 * utmpname:                              Manipulating the Database.
                                                               (line 252)
 * utmpxname:                             XPG Functions.       (line 104)
@@ -3377,7 +3398,7 @@ Function and Macro Index
                                                               (line  83)
 * vswscanf:                              Variable Arguments Input.
                                                               (line  43)
-* vsyslog:                               syslog; vsyslog.     (line 147)
+* vsyslog:                               syslog; vsyslog.     (line 148)
 * vtimes:                                Resource Usage.      (line 105)
 * vwarn:                                 Error Messages.      (line 274)
 * vwarnx:                                Error Messages.      (line 286)
@@ -4029,24 +4050,24 @@ Variable and Constant Macro Index
 * EACCES:                                Error Codes.         (line  75)
 * EADDRINUSE:                            Error Codes.         (line 272)
 * EADDRNOTAVAIL:                         Error Codes.         (line 276)
-* EADV:                                  Error Codes.         (line 532)
+* EADV:                                  Error Codes.         (line 533)
 * EAFNOSUPPORT:                          Error Codes.         (line 267)
 * EAGAIN:                                Error Codes.         (line 181)
 * EALREADY:                              Error Codes.         (line 227)
-* EAUTH:                                 Error Codes.         (line 406)
-* EBACKGROUND:                           Error Codes.         (line 438)
-* EBADE:                                 Error Codes.         (line 512)
+* EAUTH:                                 Error Codes.         (line 407)
+* EBACKGROUND:                           Error Codes.         (line 439)
+* EBADE:                                 Error Codes.         (line 513)
 * EBADF <1>:                             Line Control.        (line 119)
 * EBADF:                                 Error Codes.         (line  54)
-* EBADFD:                                Error Codes.         (line 542)
-* EBADMSG:                               Error Codes.         (line 463)
-* EBADR:                                 Error Codes.         (line 514)
-* EBADRPC:                               Error Codes.         (line 378)
-* EBADRQC:                               Error Codes.         (line 520)
-* EBADSLT:                               Error Codes.         (line 522)
-* EBFONT:                                Error Codes.         (line 526)
+* EBADFD:                                Error Codes.         (line 543)
+* EBADMSG:                               Error Codes.         (line 464)
+* EBADR:                                 Error Codes.         (line 515)
+* EBADRPC:                               Error Codes.         (line 379)
+* EBADRQC:                               Error Codes.         (line 521)
+* EBADSLT:                               Error Codes.         (line 523)
+* EBFONT:                                Error Codes.         (line 527)
 * EBUSY:                                 Error Codes.         (line  88)
-* ECANCELED:                             Error Codes.         (line 485)
+* ECANCELED:                             Error Codes.         (line 486)
 * ECHILD:                                Error Codes.         (line  59)
 * ECHO:                                  Local Modes.         (line  23)
 * ECHOCTL:                               Local Modes.         (line  73)
@@ -4055,31 +4076,31 @@ Variable and Constant Macro Index
 * ECHOKE:                                Local Modes.         (line  62)
 * ECHONL:                                Local Modes.         (line  68)
 * ECHOPRT:                               Local Modes.         (line  37)
-* ECHRNG:                                Error Codes.         (line 496)
-* ECOMM:                                 Error Codes.         (line 536)
+* ECHRNG:                                Error Codes.         (line 497)
+* ECOMM:                                 Error Codes.         (line 537)
 * ECONNABORTED:                          Error Codes.         (line 291)
 * ECONNREFUSED:                          Error Codes.         (line 330)
 * ECONNRESET:                            Error Codes.         (line 294)
-* ED:                                    Error Codes.         (line 451)
+* ED:                                    Error Codes.         (line 452)
 * EDEADLK:                               Error Codes.         (line  64)
-* EDEADLOCK:                             Error Codes.         (line 524)
+* EDEADLOCK:                             Error Codes.         (line 525)
 * EDESTADDRREQ:                          Error Codes.         (line 314)
-* EDIED:                                 Error Codes.         (line 446)
+* EDIED:                                 Error Codes.         (line 447)
 * EDOM:                                  Error Codes.         (line 172)
-* EDOTDOT:                               Error Codes.         (line 538)
+* EDOTDOT:                               Error Codes.         (line 539)
 * EDQUOT:                                Error Codes.         (line 363)
 * EEXIST:                                Error Codes.         (line  93)
 * EFAULT:                                Error Codes.         (line  79)
 * EFBIG:                                 Error Codes.         (line 146)
-* EFTYPE:                                Error Codes.         (line 399)
-* EGRATUITOUS:                           Error Codes.         (line 460)
-* EGREGIOUS:                             Error Codes.         (line 454)
+* EFTYPE:                                Error Codes.         (line 400)
+* EGRATUITOUS:                           Error Codes.         (line 461)
+* EGREGIOUS:                             Error Codes.         (line 455)
 * EHOSTDOWN:                             Error Codes.         (line 343)
 * EHOSTUNREACH:                          Error Codes.         (line 346)
-* EHWPOISON:                             Error Codes.         (line 586)
-* EIDRM:                                 Error Codes.         (line 465)
-* EIEIO:                                 Error Codes.         (line 457)
-* EILSEQ:                                Error Codes.         (line 433)
+* EHWPOISON:                             Error Codes.         (line 587)
+* EIDRM:                                 Error Codes.         (line 466)
+* EIEIO:                                 Error Codes.         (line 458)
+* EILSEQ:                                Error Codes.         (line 434)
 * EINPROGRESS:                           Error Codes.         (line 217)
 * EINTR:                                 Error Codes.         (line  25)
 * EINVAL <1>:                            Line Control.        (line 125)
@@ -4087,81 +4108,81 @@ Variable and Constant Macro Index
 * EIO:                                   Error Codes.         (line  34)
 * EISCONN:                               Error Codes.         (line 304)
 * EISDIR:                                Error Codes.         (line 111)
-* EISNAM:                                Error Codes.         (line 564)
-* EKEYEXPIRED:                           Error Codes.         (line 574)
-* EKEYREJECTED:                          Error Codes.         (line 578)
-* EKEYREVOKED:                           Error Codes.         (line 576)
-* EL2HLT:                                Error Codes.         (line 510)
-* EL2NSYNC:                              Error Codes.         (line 498)
-* EL3HLT:                                Error Codes.         (line 500)
-* EL3RST:                                Error Codes.         (line 502)
-* ELIBACC:                               Error Codes.         (line 546)
-* ELIBBAD:                               Error Codes.         (line 548)
-* ELIBEXEC:                              Error Codes.         (line 554)
-* ELIBMAX:                               Error Codes.         (line 552)
-* ELIBSCN:                               Error Codes.         (line 550)
-* ELNRNG:                                Error Codes.         (line 504)
+* EISNAM:                                Error Codes.         (line 565)
+* EKEYEXPIRED:                           Error Codes.         (line 575)
+* EKEYREJECTED:                          Error Codes.         (line 579)
+* EKEYREVOKED:                           Error Codes.         (line 577)
+* EL2HLT:                                Error Codes.         (line 511)
+* EL2NSYNC:                              Error Codes.         (line 499)
+* EL3HLT:                                Error Codes.         (line 501)
+* EL3RST:                                Error Codes.         (line 503)
+* ELIBACC:                               Error Codes.         (line 547)
+* ELIBBAD:                               Error Codes.         (line 549)
+* ELIBEXEC:                              Error Codes.         (line 555)
+* ELIBMAX:                               Error Codes.         (line 553)
+* ELIBSCN:                               Error Codes.         (line 551)
+* ELNRNG:                                Error Codes.         (line 505)
 * ELOOP:                                 Error Codes.         (line 334)
-* EMEDIUMTYPE:                           Error Codes.         (line 570)
+* EMEDIUMTYPE:                           Error Codes.         (line 571)
 * EMFILE:                                Error Codes.         (line 119)
 * EMLINK:                                Error Codes.         (line 160)
 * EMPTY <1>:                             XPG Functions.       (line  41)
 * EMPTY:                                 Manipulating the Database.
                                                               (line  71)
 * EMSGSIZE:                              Error Codes.         (line 234)
-* EMULTIHOP:                             Error Codes.         (line 467)
+* EMULTIHOP:                             Error Codes.         (line 468)
 * ENAMETOOLONG:                          Error Codes.         (line 338)
-* ENAVAIL:                               Error Codes.         (line 562)
-* ENEEDAUTH:                             Error Codes.         (line 409)
+* ENAVAIL:                               Error Codes.         (line 563)
+* ENEEDAUTH:                             Error Codes.         (line 410)
 * ENETDOWN:                              Error Codes.         (line 281)
 * ENETRESET:                             Error Codes.         (line 288)
 * ENETUNREACH:                           Error Codes.         (line 284)
 * ENFILE:                                Error Codes.         (line 128)
-* ENOANO:                                Error Codes.         (line 518)
+* ENOANO:                                Error Codes.         (line 519)
 * ENOBUFS:                               Error Codes.         (line 299)
-* ENOCSI:                                Error Codes.         (line 508)
-* ENODATA:                               Error Codes.         (line 469)
+* ENOCSI:                                Error Codes.         (line 509)
+* ENODATA:                               Error Codes.         (line 470)
 * ENODEV:                                Error Codes.         (line 103)
 * ENOENT:                                Error Codes.         (line  17)
 * ENOEXEC:                               Error Codes.         (line  50)
-* ENOKEY:                                Error Codes.         (line 572)
-* ENOLCK:                                Error Codes.         (line 393)
-* ENOLINK:                               Error Codes.         (line 471)
-* ENOMEDIUM:                             Error Codes.         (line 568)
+* ENOKEY:                                Error Codes.         (line 573)
+* ENOLCK:                                Error Codes.         (line 394)
+* ENOLINK:                               Error Codes.         (line 472)
+* ENOMEDIUM:                             Error Codes.         (line 569)
 * ENOMEM:                                Error Codes.         (line  71)
-* ENOMSG:                                Error Codes.         (line 473)
-* ENONET:                                Error Codes.         (line 528)
-* ENOPKG:                                Error Codes.         (line 530)
+* ENOMSG:                                Error Codes.         (line 474)
+* ENONET:                                Error Codes.         (line 529)
+* ENOPKG:                                Error Codes.         (line 531)
 * ENOPROTOOPT:                           Error Codes.         (line 242)
 * ENOSPC:                                Error Codes.         (line 150)
-* ENOSR:                                 Error Codes.         (line 475)
-* ENOSTR:                                Error Codes.         (line 477)
-* ENOSYS:                                Error Codes.         (line 412)
+* ENOSR:                                 Error Codes.         (line 476)
+* ENOSTR:                                Error Codes.         (line 478)
+* ENOSYS:                                Error Codes.         (line 413)
 * ENOTBLK:                               Error Codes.         (line  83)
 * ENOTCONN:                              Error Codes.         (line 308)
 * ENOTDIR:                               Error Codes.         (line 107)
 * ENOTEMPTY:                             Error Codes.         (line 350)
-* ENOTNAM:                               Error Codes.         (line 560)
-* ENOTRECOVERABLE:                       Error Codes.         (line 582)
+* ENOTNAM:                               Error Codes.         (line 561)
+* ENOTRECOVERABLE:                       Error Codes.         (line 583)
 * ENOTSOCK:                              Error Codes.         (line 231)
-* ENOTSUP:                               Error Codes.         (line 419)
+* ENOTSUP:                               Error Codes.         (line 420)
 * ENOTTY <1>:                            Line Control.        (line 122)
 * ENOTTY:                                Error Codes.         (line 134)
-* ENOTUNIQ:                              Error Codes.         (line 540)
+* ENOTUNIQ:                              Error Codes.         (line 541)
 * environ:                               Environment Access.  (line 111)
 * ENXIO:                                 Error Codes.         (line  37)
 * EOF:                                   EOF and Errors.      (line  16)
 * EOPNOTSUPP:                            Error Codes.         (line 255)
-* EOVERFLOW:                             Error Codes.         (line 479)
-* EOWNERDEAD:                            Error Codes.         (line 580)
+* EOVERFLOW:                             Error Codes.         (line 480)
+* EOWNERDEAD:                            Error Codes.         (line 581)
 * EPERM:                                 Error Codes.         (line  12)
 * EPFNOSUPPORT:                          Error Codes.         (line 263)
 * EPIPE:                                 Error Codes.         (line 165)
 * EPROCLIM:                              Error Codes.         (line 355)
-* EPROCUNAVAIL:                          Error Codes.         (line 390)
-* EPROGMISMATCH:                         Error Codes.         (line 387)
-* EPROGUNAVAIL:                          Error Codes.         (line 384)
-* EPROTO:                                Error Codes.         (line 481)
+* EPROCUNAVAIL:                          Error Codes.         (line 391)
+* EPROGMISMATCH:                         Error Codes.         (line 388)
+* EPROGUNAVAIL:                          Error Codes.         (line 385)
+* EPROTO:                                Error Codes.         (line 482)
 * EPROTONOSUPPORT:                       Error Codes.         (line 247)
 * EPROTOTYPE:                            Error Codes.         (line 238)
 * EQUIV_CLASS_MAX:                       Utility Limits.      (line  47)
@@ -4176,13 +4197,13 @@ Variable and Constant Macro Index
 * ERA_YEAR:                              The Elegant and Fast Way.
                                                               (line 129)
 * ERANGE:                                Error Codes.         (line 177)
-* EREMCHG:                               Error Codes.         (line 544)
-* EREMOTE:                               Error Codes.         (line 372)
-* EREMOTEIO:                             Error Codes.         (line 566)
-* ERESTART:                              Error Codes.         (line 494)
-* ERFKILL:                               Error Codes.         (line 584)
+* EREMCHG:                               Error Codes.         (line 545)
+* EREMOTE:                               Error Codes.         (line 373)
+* EREMOTEIO:                             Error Codes.         (line 567)
+* ERESTART:                              Error Codes.         (line 495)
+* ERFKILL:                               Error Codes.         (line 585)
 * EROFS:                                 Error Codes.         (line 157)
-* ERPCMISMATCH:                          Error Codes.         (line 381)
+* ERPCMISMATCH:                          Error Codes.         (line 382)
 * errno:                                 Checking for Errors. (line  15)
 * error_message_count:                   Error Messages.      (line 218)
 * error_one_per_line:                    Error Messages.      (line 223)
@@ -4190,20 +4211,20 @@ Variable and Constant Macro Index
 * ESOCKTNOSUPPORT:                       Error Codes.         (line 252)
 * ESPIPE:                                Error Codes.         (line 154)
 * ESRCH:                                 Error Codes.         (line  22)
-* ESRMNT:                                Error Codes.         (line 534)
+* ESRMNT:                                Error Codes.         (line 535)
 * ESTALE:                                Error Codes.         (line 366)
-* ESTRPIPE:                              Error Codes.         (line 556)
+* ESTRPIPE:                              Error Codes.         (line 557)
 * ethers:                                NSS Basics.          (line  29)
-* ETIME:                                 Error Codes.         (line 483)
+* ETIME:                                 Error Codes.         (line 484)
 * ETIMEDOUT:                             Error Codes.         (line 326)
 * ETOOMANYREFS:                          Error Codes.         (line 323)
 * ETXTBSY:                               Error Codes.         (line 138)
-* EUCLEAN:                               Error Codes.         (line 558)
-* EUNATCH:                               Error Codes.         (line 506)
+* EUCLEAN:                               Error Codes.         (line 559)
+* EUNATCH:                               Error Codes.         (line 507)
 * EUSERS:                                Error Codes.         (line 360)
 * EWOULDBLOCK:                           Error Codes.         (line 210)
 * EXDEV:                                 Error Codes.         (line  97)
-* EXFULL:                                Error Codes.         (line 516)
+* EXFULL:                                Error Codes.         (line 517)
 * EXIT_FAILURE:                          Exit Status.         (line  54)
 * EXIT_SUCCESS:                          Exit Status.         (line  46)
 * EXPR_NEST_MAX:                         Utility Limits.      (line  36)
@@ -4335,24 +4356,24 @@ Variable and Constant Macro Index
                                                               (line  75)
 * getdate_err:                           General Time String Parsing.
                                                               (line  14)
-* GLOB_ABORTED:                          Calling Glob.        (line 188)
+* GLOB_ABORTED:                          Calling Glob.        (line 202)
 * GLOB_ALTDIRFUNC:                       More Flags for Globbing.
                                                               (line  21)
-* GLOB_APPEND:                           Flags for Globbing.  (line  10)
+* GLOB_APPEND:                           Flags for Globbing.  (line  13)
 * GLOB_BRACE:                            More Flags for Globbing.
                                                               (line  29)
-* GLOB_DOOFFS:                           Flags for Globbing.  (line  27)
-* GLOB_ERR:                              Flags for Globbing.  (line  32)
+* GLOB_DOOFFS:                           Flags for Globbing.  (line  30)
+* GLOB_ERR:                              Flags for Globbing.  (line  35)
 * GLOB_MAGCHAR:                          More Flags for Globbing.
                                                               (line  15)
-* GLOB_MARK:                             Flags for Globbing.  (line  55)
-* GLOB_NOCHECK:                          Flags for Globbing.  (line  59)
-* GLOB_NOESCAPE:                         Flags for Globbing.  (line  70)
+* GLOB_MARK:                             Flags for Globbing.  (line  58)
+* GLOB_NOCHECK:                          Flags for Globbing.  (line  62)
+* GLOB_NOESCAPE:                         Flags for Globbing.  (line  68)
 * GLOB_NOMAGIC:                          More Flags for Globbing.
                                                               (line  58)
-* GLOB_NOMATCH:                          Calling Glob.        (line 194)
-* GLOB_NOSORT:                           Flags for Globbing.  (line  65)
-* GLOB_NOSPACE:                          Calling Glob.        (line 200)
+* GLOB_NOMATCH:                          Calling Glob.        (line 208)
+* GLOB_NOSORT:                           Flags for Globbing.  (line  81)
+* GLOB_NOSPACE:                          Calling Glob.        (line 214)
 * GLOB_ONLYDIR:                          More Flags for Globbing.
                                                               (line 104)
 * GLOB_PERIOD:                           More Flags for Globbing.
@@ -4470,33 +4491,33 @@ Variable and Constant Macro Index
 * LIO_WRITE:                             Asynchronous I/O.    (line  89)
 * LLONG_MAX:                             Range of Type.       (line  76)
 * LLONG_MIN:                             Range of Type.       (line  71)
-* LOG_ALERT:                             syslog; vsyslog.     (line  96)
-* LOG_AUTH:                              syslog; vsyslog.     (line  31)
-* LOG_AUTHPRIV:                          syslog; vsyslog.     (line  49)
-* LOG_CRIT:                              syslog; vsyslog.     (line  99)
-* LOG_CRON:                              syslog; vsyslog.     (line  46)
-* LOG_DAEMON:                            syslog; vsyslog.     (line  28)
-* LOG_DEBUG:                             syslog; vsyslog.     (line 114)
-* LOG_EMERG:                             syslog; vsyslog.     (line  93)
-* LOG_ERR:                               syslog; vsyslog.     (line 102)
-* LOG_FTP:                               syslog; vsyslog.     (line  52)
-* LOG_INFO:                              syslog; vsyslog.     (line 111)
-* LOG_LOCAL0:                            syslog; vsyslog.     (line  55)
-* LOG_LOCAL1:                            syslog; vsyslog.     (line  58)
-* LOG_LOCAL2:                            syslog; vsyslog.     (line  61)
-* LOG_LOCAL3:                            syslog; vsyslog.     (line  64)
-* LOG_LOCAL4:                            syslog; vsyslog.     (line  67)
-* LOG_LOCAL5:                            syslog; vsyslog.     (line  70)
-* LOG_LOCAL6:                            syslog; vsyslog.     (line  73)
-* LOG_LOCAL7:                            syslog; vsyslog.     (line  76)
-* LOG_LPR:                               syslog; vsyslog.     (line  37)
-* LOG_MAIL:                              syslog; vsyslog.     (line  25)
-* LOG_NEWS:                              syslog; vsyslog.     (line  40)
-* LOG_NOTICE:                            syslog; vsyslog.     (line 108)
-* LOG_SYSLOG:                            syslog; vsyslog.     (line  34)
-* LOG_USER:                              syslog; vsyslog.     (line  22)
-* LOG_UUCP:                              syslog; vsyslog.     (line  43)
-* LOG_WARNING:                           syslog; vsyslog.     (line 105)
+* LOG_ALERT:                             syslog; vsyslog.     (line  97)
+* LOG_AUTH:                              syslog; vsyslog.     (line  32)
+* LOG_AUTHPRIV:                          syslog; vsyslog.     (line  50)
+* LOG_CRIT:                              syslog; vsyslog.     (line 100)
+* LOG_CRON:                              syslog; vsyslog.     (line  47)
+* LOG_DAEMON:                            syslog; vsyslog.     (line  29)
+* LOG_DEBUG:                             syslog; vsyslog.     (line 115)
+* LOG_EMERG:                             syslog; vsyslog.     (line  94)
+* LOG_ERR:                               syslog; vsyslog.     (line 103)
+* LOG_FTP:                               syslog; vsyslog.     (line  53)
+* LOG_INFO:                              syslog; vsyslog.     (line 112)
+* LOG_LOCAL0:                            syslog; vsyslog.     (line  56)
+* LOG_LOCAL1:                            syslog; vsyslog.     (line  59)
+* LOG_LOCAL2:                            syslog; vsyslog.     (line  62)
+* LOG_LOCAL3:                            syslog; vsyslog.     (line  65)
+* LOG_LOCAL4:                            syslog; vsyslog.     (line  68)
+* LOG_LOCAL5:                            syslog; vsyslog.     (line  71)
+* LOG_LOCAL6:                            syslog; vsyslog.     (line  74)
+* LOG_LOCAL7:                            syslog; vsyslog.     (line  77)
+* LOG_LPR:                               syslog; vsyslog.     (line  38)
+* LOG_MAIL:                              syslog; vsyslog.     (line  26)
+* LOG_NEWS:                              syslog; vsyslog.     (line  41)
+* LOG_NOTICE:                            syslog; vsyslog.     (line 109)
+* LOG_SYSLOG:                            syslog; vsyslog.     (line  35)
+* LOG_USER:                              syslog; vsyslog.     (line  23)
+* LOG_UUCP:                              syslog; vsyslog.     (line  44)
+* LOG_WARNING:                           syslog; vsyslog.     (line 106)
 * LOGIN_PROCESS <1>:                     XPG Functions.       (line  62)
 * LOGIN_PROCESS:                         Manipulating the Database.
                                                               (line  92)
@@ -5132,6 +5153,8 @@ Program and File Index
                                                               (line  13)
 * printf.h:                              Registering New Conversions.
                                                               (line   7)
+* pt_chown:                              Configuring and compiling.
+                                                              (line 124)
 * pwd.h <1>:                             User Data Structure. (line   7)
 * pwd.h:                                 Reserved Names.      (line  89)
 * setjmp.h <1>:                          Non-Local Exits and Signals.

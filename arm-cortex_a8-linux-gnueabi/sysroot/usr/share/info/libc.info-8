@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -1696,6 +1705,300 @@ Free Documentation License".
    (a) The FSF's Back-Cover Text is: "You have the freedom to copy and
 modify this GNU manual.  Buying copies from the FSF supports it in
 developing GNU and promoting software freedom."
+
+
+File: libc.info,  Node: Standard Environment,  Prev: Environment Access,  Up: Environment Variables
+
+25.4.2 Standard Environment Variables
+-------------------------------------
+
+These environment variables have standard meanings.  This doesn't mean
+that they are always present in the environment; but if these variables
+_are_ present, they have these meanings.  You shouldn't try to use
+these environment variable names for some other purpose.
+
+`HOME'
+     This is a string representing the user's "home directory", or
+     initial default working directory.
+
+     The user can set `HOME' to any value.  If you need to make sure to
+     obtain the proper home directory for a particular user, you should
+     not use `HOME'; instead, look up the user's name in the user
+     database (*note User Database::).
+
+     For most purposes, it is better to use `HOME', precisely because
+     this lets the user specify the value.
+
+`LOGNAME'
+     This is the name that the user used to log in.  Since the value in
+     the environment can be tweaked arbitrarily, this is not a reliable
+     way to identify the user who is running a program; a function like
+     `getlogin' (*note Who Logged In::) is better for that purpose.
+
+     For most purposes, it is better to use `LOGNAME', precisely because
+     this lets the user specify the value.
+
+`PATH'
+     A "path" is a sequence of directory names which is used for
+     searching for a file.  The variable `PATH' holds a path used for
+     searching for programs to be run.
+
+     The `execlp' and `execvp' functions (*note Executing a File::) use
+     this environment variable, as do many shells and other utilities
+     which are implemented in terms of those functions.
+
+     The syntax of a path is a sequence of directory names separated by
+     colons.  An empty string instead of a directory name stands for the
+     current directory (*note Working Directory::).
+
+     A typical value for this environment variable might be a string
+     like:
+
+          :/bin:/etc:/usr/bin:/usr/new/X11:/usr/new:/usr/local/bin
+
+     This means that if the user tries to execute a program named `foo',
+     the system will look for files named `foo', `/bin/foo',
+     `/etc/foo', and so on.  The first of these files that exists is
+     the one that is executed.
+
+`TERM'
+     This specifies the kind of terminal that is receiving program
+     output.  Some programs can make use of this information to take
+     advantage of special escape sequences or terminal modes supported
+     by particular kinds of terminals.  Many programs which use the
+     termcap library (*note Find: (termcap)Finding a Terminal
+     Description.) use the `TERM' environment variable, for example.
+
+`TZ'
+     This specifies the time zone.  *Note TZ Variable::, for
+     information about the format of this string and how it is used.
+
+`LANG'
+     This specifies the default locale to use for attribute categories
+     where neither `LC_ALL' nor the specific environment variable for
+     that category is set.  *Note Locales::, for more information about
+     locales.
+
+`LC_ALL'
+     If this environment variable is set it overrides the selection for
+     all the locales done using the other `LC_*' environment variables.
+     The value of the other `LC_*' environment variables is simply
+     ignored in this case.
+
+`LC_COLLATE'
+     This specifies what locale to use for string sorting.
+
+`LC_CTYPE'
+     This specifies what locale to use for character sets and character
+     classification.
+
+`LC_MESSAGES'
+     This specifies what locale to use for printing messages and to
+     parse responses.
+
+`LC_MONETARY'
+     This specifies what locale to use for formatting monetary values.
+
+`LC_NUMERIC'
+     This specifies what locale to use for formatting numbers.
+
+`LC_TIME'
+     This specifies what locale to use for formatting date/time values.
+
+`NLSPATH'
+     This specifies the directories in which the `catopen' function
+     looks for message translation catalogs.
+
+`_POSIX_OPTION_ORDER'
+     If this environment variable is defined, it suppresses the usual
+     reordering of command line arguments by `getopt' and `argp_parse'.
+     *Note Argument Syntax::.
+
+
+
+File: libc.info,  Node: Auxiliary Vector,  Next: System Calls,  Prev: Environment Variables,  Up: Program Basics
+
+25.5 Auxiliary Vector
+=====================
+
+When a program is executed, it receives information from the operating
+system about the environment in which it is operating.  The form of this
+information is a table of key-value pairs, where the keys are from the
+set of `AT_' values in `elf.h'.  Some of the data is provided by the
+kernel for libc consumption, and may be obtained by ordinary
+interfaces, such as `sysconf'.  However, on a platform-by-platform
+basis there may be information that is not available any other way.
+
+25.5.1 Definition of `getauxval'
+--------------------------------
+
+ -- Function: unsigned long int getauxval (unsigned long int TYPE)
+     This function is used to inquire about the entries in the auxiliary
+     vector.  The TYPE argument should be one of the `AT_' symbols
+     defined in `elf.h'.  If a matching entry is found, the value is
+     returned; if the entry is not found, zero is returned.
+
+   For some platforms, the key `AT_HWCAP' is the easiest way to inquire
+about any instruction set extensions available at runtime.  In this
+case, there will (of necessity) be a platform-specific set of `HWCAP_'
+values masked together that describe the capabilities of the cpu on
+which the program is being executed.
+
+
+File: libc.info,  Node: System Calls,  Next: Program Termination,  Prev: Auxiliary Vector,  Up: Program Basics
+
+25.6 System Calls
+=================
+
+A system call is a request for service that a program makes of the
+kernel.  The service is generally something that only the kernel has
+the privilege to do, such as doing I/O.  Programmers don't normally
+need to be concerned with system calls because there are functions in
+the GNU C Library to do virtually everything that system calls do.
+These functions work by making system calls themselves.  For example,
+there is a system call that changes the permissions of a file, but you
+don't need to know about it because you can just use the GNU C Library's
+`chmod' function.
+
+   System calls are sometimes called kernel calls.
+
+   However, there are times when you want to make a system call
+explicitly, and for that, the GNU C Library provides the `syscall'
+function.  `syscall' is harder to use and less portable than functions
+like `chmod', but easier and more portable than coding the system call
+in assembler instructions.
+
+   `syscall' is most useful when you are working with a system call
+which is special to your system or is newer than the GNU C Library you
+are using.  `syscall' is implemented in an entirely generic way; the
+function does not know anything about what a particular system call
+does or even if it is valid.
+
+   The description of `syscall' in this section assumes a certain
+protocol for system calls on the various platforms on which the GNU C
+Library runs.  That protocol is not defined by any strong authority, but
+we won't describe it here either because anyone who is coding `syscall'
+probably won't accept anything less than kernel and C library source
+code as a specification of the interface between them anyway.
+
+   `syscall' is declared in `unistd.h'.
+
+ -- Function: long int syscall (long int SYSNO, ...)
+     `syscall' performs a generic system call.
+
+     SYSNO is the system call number.  Each kind of system call is
+     identified by a number.  Macros for all the possible system call
+     numbers are defined in `sys/syscall.h'
+
+     The remaining arguments are the arguments for the system call, in
+     order, and their meanings depend on the kind of system call.  Each
+     kind of system call has a definite number of arguments, from zero
+     to five.  If you code more arguments than the system call takes,
+     the extra ones to the right are ignored.
+
+     The return value is the return value from the system call, unless
+     the system call failed.  In that case, `syscall' returns `-1' and
+     sets `errno' to an error code that the system call returned.  Note
+     that system calls do not return `-1' when they succeed.  
+
+     If you specify an invalid SYSNO, `syscall' returns `-1' with
+     `errno' = `ENOSYS'.
+
+     Example:
+
+
+          #include <unistd.h>
+          #include <sys/syscall.h>
+          #include <errno.h>
+
+          ...
+
+          int rc;
+
+          rc = syscall(SYS_chmod, "/etc/passwd", 0444);
+
+          if (rc == -1)
+             fprintf(stderr, "chmod failed, errno = %d\n", errno);
+
+     This, if all the compatibility stars are aligned, is equivalent to
+     the following preferable code:
+
+
+          #include <sys/types.h>
+          #include <sys/stat.h>
+          #include <errno.h>
+
+          ...
+
+          int rc;
+
+          rc = chmod("/etc/passwd", 0444);
+          if (rc == -1)
+             fprintf(stderr, "chmod failed, errno = %d\n", errno);
+
+
+
+File: libc.info,  Node: Program Termination,  Prev: System Calls,  Up: Program Basics
+
+25.7 Program Termination
+========================
+
+The usual way for a program to terminate is simply for its `main'
+function to return.  The "exit status value" returned from the `main'
+function is used to report information back to the process's parent
+process or shell.
+
+   A program can also terminate normally by calling the `exit' function.
+
+   In addition, programs can be terminated by signals; this is
+discussed in more detail in *note Signal Handling::.  The `abort'
+function causes a signal that kills the program.
+
+* Menu:
+
+* Normal Termination::          If a program calls `exit', a
+                                 process terminates normally.
+* Exit Status::                 The `exit status' provides information
+                                 about why the process terminated.
+* Cleanups on Exit::            A process can run its own cleanup
+                                 functions upon normal termination.
+* Aborting a Program::          The `abort' function causes
+                                 abnormal program termination.
+* Termination Internals::       What happens when a process terminates.
+
+
+File: libc.info,  Node: Normal Termination,  Next: Exit Status,  Up: Program Termination
+
+25.7.1 Normal Termination
+-------------------------
+
+A process terminates normally when its program signals it is done by
+calling `exit'.  Returning from `main' is equivalent to calling `exit',
+and the value that `main' returns is used as the argument to `exit'.
+
+ -- Function: void exit (int STATUS)
+     The `exit' function tells the system that the program is done,
+     which causes it to terminate the process.
+
+     STATUS is the program's exit status, which becomes part of the
+     process' termination status.  This function does not return.
+
+   Normal termination causes the following actions:
+
+  1. Functions that were registered with the `atexit' or `on_exit'
+     functions are called in the reverse order of their registration.
+     This mechanism allows your application to specify its own
+     "cleanup" actions to be performed at program termination.
+     Typically, this is used to do things like saving program state
+     information in a file, or unlocking locks in shared data bases.
+
+  2. All open streams are closed, writing out any buffered output data.
+     See *note Closing Streams::.  In addition, temporary files opened
+     with the `tmpfile' function are removed; see *note Temporary
+     Files::.
+
+  3. `_exit' is called, terminating the program.  *Note Termination
+     Internals::.
 
 
 File: libc.info,  Node: Exit Status,  Next: Cleanups on Exit,  Prev: Normal Termination,  Up: Program Termination
@@ -3780,7 +4083,7 @@ correctly in the local environment.  Traditionally, this was done by
 using files (e.g., `/etc/passwd'), but other nameservices (like the
 Network Information Service (NIS) and the Domain Name Service (DNS))
 became popular, and were hacked into the C library, usually with a fixed
-search order (*note frobnicate: (jargon)frobnicate.).
+search order.
 
    The GNU C Library contains a cleaner solution of this problem.  It is
 designed after a method used by Sun Microsystems in the C library of
@@ -4796,7 +5099,7 @@ there is no way to drop privileges permanently.
 group IDs.  To use `setgroups' or `initgroups', your programs should
 include the header file `grp.h'.  
 
- -- Function: int setgroups (size_t COUNT, gid_t *GROUPS)
+ -- Function: int setgroups (size_t COUNT, const gid_t *GROUPS)
      This function sets the process's supplementary group IDs.  It can
      only be called from privileged processes.  The COUNT argument
      specifies the number of group IDs in the array GROUPS.
@@ -5801,7 +6104,7 @@ particular file.
      A null pointer is returned when no more entries are available.
 
  -- Function: int getpwent_r (struct passwd *RESULT_BUF, char *BUFFER,
-          int BUFLEN, struct passwd **RESULT)
+          size_t BUFLEN, struct passwd **RESULT)
      This function is similar to `getpwent' in that it returns the next
      entry from the stream initialized by `setpwent'.  Like
      `fgetpwent_r', it uses the user-supplied buffers in RESULT_BUF and
@@ -6173,7 +6476,7 @@ are the `innetgr' function and parts of the implementation of the
      occurred.
 
  -- Function: int getnetgrent_r (char **HOSTP, char **USERP, char
-          **DOMAINP, char *BUFFER, int BUFLEN)
+          **DOMAINP, char *BUFFER, size_t BUFLEN)
      This function is similar to `getnetgrent' with only one exception:
      the strings the three string pointers HOSTP, USERP, and DOMAINP
      point to, are placed in the buffer of BUFLEN bytes starting at
@@ -6849,7 +7152,7 @@ options.
      should be used in situations where multiple threads access the
      file.
 
- -- Function: struct mntent * getmntent_r (FILE *STREAM, struct mentent
+ -- Function: struct mntent * getmntent_r (FILE *STREAM, struct mntent
           *RESULT, char *BUFFER, int BUFSIZE)
      The `getmntent_r' function is the reentrant variant of
      `getmntent'.  It also returns the next entry from the file and
@@ -7182,7 +7485,8 @@ File: libc.info,  Node: System Parameters,  Prev: Filesystem Handling,  Up: Syst
 This section describes the `sysctl' function, which gets and sets a
 variety of system parameters.
 
-   The symbols used in this section are declared in the file `sysctl.h'.
+   The symbols used in this section are declared in the file
+`sys/sysctl.h'.
 
  -- Function: int sysctl (int *NAMES, int NLEN, void *OLDVAL, size_t
           *OLDLENP, void *NEWVAL, size_t NEWLEN)
@@ -7211,10 +7515,10 @@ variety of system parameters.
      identify a particular parameter, you specify a path through the
      structure in a way analogous to specifying the pathname of a file.
      Each component of the path is specified by an integer and each of
-     these integers has a macro defined for it by `sysctl.h'.  NAMES is
-     the path, in the form of an array of integers.  Each component of
-     the path is one element of the array, in order.  NLEN is the
-     number of components in the path.
+     these integers has a macro defined for it by `sys/sysctl.h'.
+     NAMES is the path, in the form of an array of integers.  Each
+     component of the path is one element of the array, in order.  NLEN
+     is the number of components in the path.
 
      For example, the first component of the path for all the paging
      parameters is the value `CTL_VM'.  For the free page thresholds,
@@ -7400,7 +7704,7 @@ to have on _any_ POSIX system.  *Note Minimums::.
      have even more.  You can use `sysconf' to see whether a particular
      machine will let you have more (*note Sysconf::).
 
- -- Macro: int SSIZE_MAX
+ -- Macro: ssize_t SSIZE_MAX
      The largest value that can fit in an object of type `ssize_t'.
      Effectively, this is the limit on the number of bytes that can be
      read or written in a single operation.
@@ -8754,295 +9058,4 @@ substitute.  For instance, a very simple substitute is as follows:
 
    The substitute takes the same parameters as `getline' (*note Line
 Input::); the user must print any prompt desired.
-
-
-File: libc.info,  Node: crypt,  Next: DES Encryption,  Prev: getpass,  Up: Cryptographic Functions
-
-32.3 Encrypting Passwords
-=========================
-
- -- Function: char * crypt (const char *KEY, const char *SALT)
-     The `crypt' function takes a password, KEY, as a string, and a
-     SALT character array which is described below, and returns a
-     printable ASCII string which starts with another salt.  It is
-     believed that, given the output of the function, the best way to
-     find a KEY that will produce that output is to guess values of KEY
-     until the original value of KEY is found.
-
-     The SALT parameter does two things.  Firstly, it selects which
-     algorithm is used, the MD5-based one or the DES-based one.
-     Secondly, it makes life harder for someone trying to guess
-     passwords against a file containing many passwords; without a
-     SALT, an intruder can make a guess, run `crypt' on it once, and
-     compare the result with all the passwords.  With a SALT, the
-     intruder must run `crypt' once for each different salt.
-
-     For the MD5-based algorithm, the SALT should consist of the string
-     `$1$', followed by up to 8 characters, terminated by either
-     another `$' or the end of the string.  The result of `crypt' will
-     be the SALT, followed by a `$' if the salt didn't end with one,
-     followed by 22 characters from the alphabet `./0-9A-Za-z', up to
-     34 characters total.  Every character in the KEY is significant.
-
-     For the DES-based algorithm, the SALT should consist of two
-     characters from the alphabet `./0-9A-Za-z', and the result of
-     `crypt' will be those two characters followed by 11 more from the
-     same alphabet, 13 in total.  Only the first 8 characters in the
-     KEY are significant.
-
-     The MD5-based algorithm has no limit on the useful length of the
-     password used, and is slightly more secure.  It is therefore
-     preferred over the DES-based algorithm.
-
-     When the user enters their password for the first time, the SALT
-     should be set to a new string which is reasonably random.  To
-     verify a password against the result of a previous call to
-     `crypt', pass the result of the previous call as the SALT.
-
-   The following short program is an example of how to use `crypt' the
-first time a password is entered.  Note that the SALT generation is
-just barely acceptable; in particular, it is not unique between
-machines, and in many applications it would not be acceptable to let an
-attacker know what time the user's password was last set.
-
-
-     #include <stdio.h>
-     #include <time.h>
-     #include <unistd.h>
-     #include <crypt.h>
-
-     int
-     main(void)
-     {
-       unsigned long seed[2];
-       char salt[] = "$1$........";
-       const char *const seedchars =
-         "./0123456789ABCDEFGHIJKLMNOPQRST"
-         "UVWXYZabcdefghijklmnopqrstuvwxyz";
-       char *password;
-       int i;
-
-       /* Generate a (not very) random seed.
-          You should do it better than this... */
-       seed[0] = time(NULL);
-       seed[1] = getpid() ^ (seed[0] >> 14 & 0x30000);
-
-       /* Turn it into printable characters from `seedchars'. */
-       for (i = 0; i < 8; i++)
-         salt[3+i] = seedchars[(seed[i/5] >> (i%5)*6) & 0x3f];
-
-       /* Read in the user's password and encrypt it. */
-       password = crypt(getpass("Password:"), salt);
-
-       /* Print the results. */
-       puts(password);
-       return 0;
-     }
-
-   The next program shows how to verify a password.  It prompts the user
-for a password and prints "Access granted." if the user types `GNU libc
-manual'.
-
-
-     #include <stdio.h>
-     #include <string.h>
-     #include <unistd.h>
-     #include <crypt.h>
-
-     int
-     main(void)
-     {
-       /* Hashed form of "GNU libc manual". */
-       const char *const pass = "$1$/iSaq7rB$EoUw5jJPPvAPECNaaWzMK/";
-
-       char *result;
-       int ok;
-
-       /* Read in the user's password and encrypt it,
-          passing the expected password in as the salt. */
-       result = crypt(getpass("Password:"), pass);
-
-       /* Test the result. */
-       ok = strcmp (result, pass) == 0;
-
-       puts(ok ? "Access granted." : "Access denied.");
-       return ok ? 0 : 1;
-     }
-
- -- Function: char * crypt_r (const char *KEY, const char *SALT, struct
-          crypt_data * DATA)
-     The `crypt_r' function does the same thing as `crypt', but takes
-     an extra parameter which includes space for its result (among
-     other things), so it can be reentrant.  `data->initialized' must be
-     cleared to zero before the first time `crypt_r' is called.
-
-     The `crypt_r' function is a GNU extension.
-
-   The `crypt' and `crypt_r' functions are prototyped in the header
-`crypt.h'.
-
-
-File: libc.info,  Node: DES Encryption,  Prev: crypt,  Up: Cryptographic Functions
-
-32.4 DES Encryption
-===================
-
-The Data Encryption Standard is described in the US Government Federal
-Information Processing Standards (FIPS) 46-3 published by the National
-Institute of Standards and Technology.  The DES has been very thoroughly
-analyzed since it was developed in the late 1970s, and no new
-significant flaws have been found.
-
-   However, the DES uses only a 56-bit key (plus 8 parity bits), and a
-machine has been built in 1998 which can search through all possible
-keys in about 6 days, which cost about US$200000; faster searches would
-be possible with more money.  This makes simple DES insecure for most
-purposes, and NIST no longer permits new US government systems to use
-simple DES.
-
-   For serious encryption functionality, it is recommended that one of
-the many free encryption libraries be used instead of these routines.
-
-   The DES is a reversible operation which takes a 64-bit block and a
-64-bit key, and produces another 64-bit block.  Usually the bits are
-numbered so that the most-significant bit, the first bit, of each block
-is numbered 1.
-
-   Under that numbering, every 8th bit of the key (the 8th, 16th, and so
-on) is not used by the encryption algorithm itself.  But the key must
-have odd parity; that is, out of bits 1 through 8, and 9 through 16, and
-so on, there must be an odd number of `1' bits, and this completely
-specifies the unused bits.
-
- -- Function: void setkey (const char *KEY)
-     The `setkey' function sets an internal data structure to be an
-     expanded form of KEY.  KEY is specified as an array of 64 bits
-     each stored in a `char', the first bit is `key[0]' and the 64th
-     bit is `key[63]'.  The KEY should have the correct parity.
-
- -- Function: void encrypt (char *BLOCK, int EDFLAG)
-     The `encrypt' function encrypts BLOCK if EDFLAG is 0, otherwise it
-     decrypts BLOCK, using a key previously set by `setkey'.  The
-     result is placed in BLOCK.
-
-     Like `setkey', BLOCK is specified as an array of 64 bits each
-     stored in a `char', but there are no parity bits in BLOCK.
-
- -- Function: void setkey_r (const char *KEY, struct crypt_data * DATA)
- -- Function: void encrypt_r (char *BLOCK, int EDFLAG, struct
-          crypt_data * DATA)
-     These are reentrant versions of `setkey' and `encrypt'.  The only
-     difference is the extra parameter, which stores the expanded
-     version of KEY.  Before calling `setkey_r' the first time,
-     `data->initialized' must be cleared to zero.
-
-   The `setkey_r' and `encrypt_r' functions are GNU extensions.
-`setkey', `encrypt', `setkey_r', and `encrypt_r' are defined in
-`crypt.h'.
-
- -- Function: int ecb_crypt (char *KEY, char *BLOCKS, unsigned LEN,
-          unsigned MODE)
-     The function `ecb_crypt' encrypts or decrypts one or more blocks
-     using DES.  Each block is encrypted independently.
-
-     The BLOCKS and the KEY are stored packed in 8-bit bytes, so that
-     the first bit of the key is the most-significant bit of `key[0]'
-     and the 63rd bit of the key is stored as the least-significant bit
-     of `key[7]'.  The KEY should have the correct parity.
-
-     LEN is the number of bytes in BLOCKS.  It should be a multiple of
-     8 (so that there is a whole number of blocks to encrypt).  LEN is
-     limited to a maximum of `DES_MAXDATA' bytes.
-
-     The result of the encryption replaces the input in BLOCKS.
-
-     The MODE parameter is the bitwise OR of two of the following:
-
-    `DES_ENCRYPT'
-          This constant, used in the MODE parameter, specifies that
-          BLOCKS is to be encrypted.
-
-    `DES_DECRYPT'
-          This constant, used in the MODE parameter, specifies that
-          BLOCKS is to be decrypted.
-
-    `DES_HW'
-          This constant, used in the MODE parameter, asks to use a
-          hardware device.  If no hardware device is available,
-          encryption happens anyway, but in software.
-
-    `DES_SW'
-          This constant, used in the MODE parameter, specifies that no
-          hardware device is to be used.
-
-     The result of the function will be one of these values:
-
-    `DESERR_NONE'
-          The encryption succeeded.
-
-    `DESERR_NOHWDEVICE'
-          The encryption succeeded, but there was no hardware device
-          available.
-
-    `DESERR_HWERROR'
-          The encryption failed because of a hardware problem.
-
-    `DESERR_BADPARAM'
-          The encryption failed because of a bad parameter, for
-          instance LEN is not a multiple of 8 or LEN is larger than
-          `DES_MAXDATA'.
-
- -- Function: int DES_FAILED (int ERR)
-     This macro returns 1 if ERR is a `success' result code from
-     `ecb_crypt' or `cbc_crypt', and 0 otherwise.
-
- -- Function: int cbc_crypt (char *KEY, char *BLOCKS, unsigned LEN,
-          unsigned MODE, char *IVEC)
-     The function `cbc_crypt' encrypts or decrypts one or more blocks
-     using DES in Cipher Block Chaining mode.
-
-     For encryption in CBC mode, each block is exclusive-ored with IVEC
-     before being encrypted, then IVEC is replaced with the result of
-     the encryption, then the next block is processed.  Decryption is
-     the reverse of this process.
-
-     This has the advantage that blocks which are the same before being
-     encrypted are very unlikely to be the same after being encrypted,
-     making it much harder to detect patterns in the data.
-
-     Usually, IVEC is set to 8 random bytes before encryption starts.
-     Then the 8 random bytes are transmitted along with the encrypted
-     data (without themselves being encrypted), and passed back in as
-     IVEC for decryption.  Another possibility is to set IVEC to 8
-     zeroes initially, and have the first the block encrypted consist
-     of 8 random bytes.
-
-     Otherwise, all the parameters are similar to those for `ecb_crypt'.
-
- -- Function: void des_setparity (char *KEY)
-     The function `des_setparity' changes the 64-bit KEY, stored packed
-     in 8-bit bytes, to have odd parity by altering the low bits of
-     each byte.
-
-   The `ecb_crypt', `cbc_crypt', and `des_setparity' functions and
-their accompanying macros are all defined in the header
-`rpc/des_crypt.h'.
-
-
-File: libc.info,  Node: Debugging Support,  Next: Language Features,  Prev: Cryptographic Functions,  Up: Top
-
-33 Debugging support
-********************
-
-Applications are usually debugged using dedicated debugger programs.
-But sometimes this is not possible and, in any case, it is useful to
-provide the developer with as much information as possible at the time
-the problems are experienced.  For this reason a few functions are
-provided which a program can use to help the developer more easily
-locate the problem.
-
-* Menu:
-
-* Backtraces::                Obtaining and printing a back trace of the
-                               current stack.
 

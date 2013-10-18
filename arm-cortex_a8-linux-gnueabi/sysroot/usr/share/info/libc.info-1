@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -1703,8 +1712,8 @@ File: libc.info,  Node: Top,  Next: Introduction,  Prev: (dir),  Up: (dir)
 Main Menu
 *********
 
-This is `The GNU C Library Reference Manual', for Version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8)
+This is `The GNU C Library Reference Manual', for Version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8)
 of the GNU C Library.
 
 * Menu:
@@ -1757,6 +1766,7 @@ of the GNU C Library.
                                    limits.
 * Cryptographic Functions::      DES encryption and password handling.
 * Debugging Support::            Functions to help debugging applications.
+* POSIX Threads::                POSIX Threads.
 
 Appendices
 
@@ -1782,7 +1792,7 @@ Indices
 * Variable Index::               Index of variables and variable-like macros.
 * File Index::                   Index of programs and files.
 
- --- The Detailed Node Listing ---
+  --- The Detailed Node Listing ---
 
 Introduction
 
@@ -2347,12 +2357,12 @@ Internet Namespace
 * Internet Address Formats::    How socket addresses are specified in the
                                  Internet namespace.
 * Host Addresses::	        All about host addresses of Internet host.
-* Protocols Database::		Referring to protocols by name.
 * Ports::			Internet port numbers.
 * Services Database::           Ports may have symbolic names.
 * Byte Order::		        Different hosts may use different byte
                                  ordering conventions; you need to
                                  canonicalize host address and port number.
+* Protocols Database::		Referring to protocols by name.
 * Inet Example::	        Putting it all together.
 
 Host Addresses
@@ -2923,6 +2933,18 @@ Debugging Support
 
 * Backtraces::                Obtaining and printing a back trace of the
                                current stack.
+
+POSIX Threads
+
+* Thread-specific Data::          Support for creating and
+				  managing thread-specific data
+* Non-POSIX Extensions::          Additional functions to extend
+				  POSIX Thread functionality
+
+Non-POSIX Extensions
+
+* Default Thread Attributes::             Setting default attributes for
+					  threads in a process.
 
 Language Features
 
@@ -4336,10 +4358,11 @@ on other systems.
      The user's disk quota was exceeded.
 
  -- Macro: int ESTALE
-     Stale NFS file handle.  This indicates an internal confusion in
-     the NFS system which is due to file system rearrangements on the
-     server host.  Repairing this condition usually requires unmounting
-     and remounting the NFS file system on the local host.
+     Stale file handle.  This indicates an internal confusion in the
+     file system which is due to file system rearrangements on the
+     server host for NFS file systems or corruption in other file
+     systems.  Repairing this condition usually requires unmounting,
+     possibly repairing and remounting the file system.
 
  -- Macro: int EREMOTE
      An attempt was made to NFS-mount a remote file system with a file
@@ -4763,7 +4786,7 @@ functions are declared in `error.h'.
    As mentioned above the `error' and `error_at_line' functions can be
 customized by defining a variable named `error_print_progname'.
 
- -- Variable: void (*) error_print_progname  (void)
+ -- Variable: void (*error_print_progname) (void)
      If the `error_print_progname' variable is defined to a non-zero
      value the function pointed to is called by `error' or
      `error_at_line'.  It is expected to print the program name or do
@@ -5459,18 +5482,9 @@ defined in `malloc.h'.
      to be set, and VALUE the new value to be set.  Possible choices
      for PARAM, as defined in `malloc.h', are:
 
-    `M_TRIM_THRESHOLD'
-          This is the minimum size (in bytes) of the top-most,
-          releasable chunk that will cause `sbrk' to be called with a
-          negative argument in order to return memory to the system.
-
-    `M_TOP_PAD'
-          This parameter determines the amount of extra memory to
-          obtain from the system when a call to `sbrk' is required.  It
-          also specifies the number of bytes to retain when shrinking
-          the heap by calling `sbrk' with a negative argument.  This
-          provides the necessary hysteresis in heap size such that
-          excessive amounts of system calls can be avoided.
+    `M_MMAP_MAX'
+          The maximum number of chunks to allocate with `mmap'.
+          Setting this to zero disables all use of `mmap'.
 
     `M_MMAP_THRESHOLD'
           All chunks larger than this value are allocated outside the
@@ -5478,10 +5492,6 @@ defined in `malloc.h'.
           guaranteed that the memory for these chunks can be returned
           to the system on `free'.  Note that requests smaller than
           this threshold might still be allocated via `mmap'.
-
-    `M_MMAP_MAX'
-          The maximum number of chunks to allocate with `mmap'.
-          Setting this to zero disables all use of `mmap'.
 
     `M_PERTURB'
           If non-zero, memory blocks are filled with values depending
@@ -5492,6 +5502,19 @@ defined in `malloc.h'.
           the freed block will have any specific values.  It only
           guarantees that the content the block had before it was freed
           will be overwritten.
+
+    `M_TOP_PAD'
+          This parameter determines the amount of extra memory to
+          obtain from the system when a call to `sbrk' is required.  It
+          also specifies the number of bytes to retain when shrinking
+          the heap by calling `sbrk' with a negative argument.  This
+          provides the necessary hysteresis in heap size such that
+          excessive amounts of system calls can be avoided.
+
+    `M_TRIM_THRESHOLD'
+          This is the minimum size (in bytes) of the top-most,
+          releasable chunk that will cause `sbrk' to be called with a
+          negative argument in order to return memory to the system.
 
 
 
@@ -8241,7 +8264,7 @@ Output Functions::) and `scanf' (*note Formatted Input Functions::).
 
      The value returned by `memmove' is the value of TO.
 
- -- Function: wchar_t * wmemmove (wchar *WTO, const wchar_t *WFROM,
+ -- Function: wchar_t * wmemmove (wchar_t *WTO, const wchar_t *WFROM,
           size_t SIZE)
      `wmemmove' copies the SIZE wide characters at WFROM into the SIZE
      wide characters at WTO, even if those two blocks of space overlap.

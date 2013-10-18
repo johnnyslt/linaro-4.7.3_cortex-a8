@@ -453,6 +453,12 @@ START-INFO-DIR-ENTRY
 * __gconv_init_fct: (libc)glibc iconv Implementation.
 * __ppc_get_timebase: (libc)PowerPC.
 * __ppc_get_timebase_freq: (libc)PowerPC.
+* __ppc_mdoio: (libc)PowerPC.
+* __ppc_mdoom: (libc)PowerPC.
+* __ppc_set_ppr_low: (libc)PowerPC.
+* __ppc_set_ppr_med: (libc)PowerPC.
+* __ppc_set_ppr_med_low: (libc)PowerPC.
+* __ppc_yield: (libc)PowerPC.
 * __va_copy: (libc)Argument Macros.
 * _exit: (libc)Termination Internals.
 * _flushlbf: (libc)Flushing Buffers.
@@ -1042,6 +1048,7 @@ START-INFO-DIR-ENTRY
 * isnormal: (libc)Floating Point Classes.
 * isprint: (libc)Classification of Characters.
 * ispunct: (libc)Classification of Characters.
+* issignaling: (libc)Floating Point Classes.
 * isspace: (libc)Classification of Characters.
 * isunordered: (libc)FP Comparison Functions.
 * isupper: (libc)Classification of Characters.
@@ -1263,6 +1270,8 @@ START-INFO-DIR-ENTRY
 * printf_size: (libc)Predefined Printf Handlers.
 * printf_size_info: (libc)Predefined Printf Handlers.
 * psignal: (libc)Signal Messages.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
+* pthread_getattr_default_np: (libc)Default Thread Attributes.
 * ptsname: (libc)Allocation.
 * ptsname_r: (libc)Allocation.
 * putc: (libc)Simple Output.
@@ -1679,10 +1688,10 @@ END-INFO-DIR-ENTRY
 
    This file documents the GNU C Library.
 
-   This is `The GNU C Library Reference Manual', for version 2.17
-(crosstool-NG hg+default-036c00d27d80 - Linaro GCC 2013.09 - Cortex-A8).
+   This is `The GNU C Library Reference Manual', for version 2.18
+(crosstool-NG hg+default-ca5924511405 - Linaro GCC 2013.10 - Cortex-A8).
 
-   Copyright (C) 1993-2012 Free Software Foundation, Inc.
+   Copyright (C) 1993-2013 Free Software Foundation, Inc.
 
    Permission is granted to copy, distribute and/or modify this document
 under the terms of the GNU Free Documentation License, Version
@@ -2110,8 +2119,8 @@ potentially all elements must be checked.  The GNU C Library contains
 functions to perform linear search.  The prototypes for the following
 two functions can be found in `search.h'.
 
- -- Function: void * lfind (const void *KEY, void *BASE, size_t *NMEMB,
-          size_t SIZE, comparison_fn_t COMPAR)
+ -- Function: void * lfind (const void *KEY, const void *BASE, size_t
+          *NMEMB, size_t SIZE, comparison_fn_t COMPAR)
      The `lfind' function searches in the array with `*NMEMB' elements
      of SIZE bytes pointed to by BASE for an element which matches the
      one pointed to by KEY.  The function pointed to by COMPAR is used
@@ -2881,6 +2890,13 @@ in the structure's fields to tell you about the results.
 
           This is a GNU extension.
 
+    `gl_flags'
+          The flags used when `glob' was called.  In addition,
+          `GLOB_MAGCHAR' might be set.  See *note Flags for Globbing::
+          for more details.
+
+          This is a GNU extension.
+
    For use in the `glob64' function `glob.h' contains another
 definition for a very similar type.  `glob64_t' differs from `glob_t'
 only in the types of the members `gl_readdir', `gl_stat', and
@@ -2955,6 +2971,13 @@ only in the types of the members `gl_readdir', `gl_stat', and
           filesystems, not following symbolic links.  It is used if the
           `GLOB_ALTDIRFUNC' bit is set in the flag parameter.  The type
           of this field is `int (*) (const char *, struct stat64 *)'.
+
+          This is a GNU extension.
+
+    `gl_flags'
+          The flags used when `glob' was called.  In addition,
+          `GLOB_MAGCHAR' might be set.  See *note Flags for Globbing::
+          for more details.
 
           This is a GNU extension.
 
@@ -3037,9 +3060,12 @@ File: libc.info,  Node: Flags for Globbing,  Next: More Flags for Globbing,  Pre
 10.2.2 Flags for Globbing
 -------------------------
 
-This section describes the flags that you can specify in the FLAGS
-argument to `glob'.  Choose the flags you want, and combine them with
-the C bitwise OR operator `|'.
+This section describes the standard flags that you can specify in the
+FLAGS argument to `glob'.  Choose the flags you want, and combine them
+with the C bitwise OR operator `|'.
+
+   Note that there are *note More Flags for Globbing:: available as GNU
+extensions.
 
 `GLOB_APPEND'
      Append the words from this expansion to the vector of words
@@ -3096,11 +3122,6 @@ the C bitwise OR operator `|'.
      (Normally, when the pattern doesn't match anything, `glob' returns
      that there were no matches.)
 
-`GLOB_NOSORT'
-     Don't sort the file names; return them in no particular order.
-     (In practice, the order will depend on the order of the entries in
-     the directory.)  The only reason _not_ to sort is to save time.
-
 `GLOB_NOESCAPE'
      Don't treat the `\' character specially in patterns.  Normally,
      `\' quotes the following character, turning off its special meaning
@@ -3113,6 +3134,11 @@ the C bitwise OR operator `|'.
      `glob' does its work by calling the function `fnmatch' repeatedly.
      It handles the flag `GLOB_NOESCAPE' by turning on the
      `FNM_NOESCAPE' flag in calls to `fnmatch'.
+
+`GLOB_NOSORT'
+     Don't sort the file names; return them in no particular order.
+     (In practice, the order will depend on the order of the entries in
+     the directory.)  The only reason _not_ to sort is to save time.
 
 
 File: libc.info,  Node: More Flags for Globbing,  Prev: Flags for Globbing,  Up: Globbing
@@ -5132,7 +5158,7 @@ line-oriented output.
      The `fputc_unlocked' function is equivalent to the `fputc'
      function except that it does not implicitly lock the stream.
 
- -- Function: wint_t fputwc_unlocked (wint_t WC, FILE *STREAM)
+ -- Function: wint_t fputwc_unlocked (wchar_t WC, FILE *STREAM)
      The `fputwc_unlocked' function is equivalent to the `fputwc'
      function except that it does not implicitly lock the stream.
 
@@ -7817,7 +7843,8 @@ input.  Prototypes for these functions are in the header file `stdio.h'.
      an argument to receive a string read under control of the `%s',
      `%S', or `%[' conversion.
 
- -- Function: int swscanf (const wchar_t *WS, const char *TEMPLATE, ...)
+ -- Function: int swscanf (const wchar_t *WS, const wchar_t *TEMPLATE,
+          ...)
      This is like `wscanf', except that the characters are taken from
      the null-terminated string WS instead of from a stream.  Reaching
      the end of the string is treated as an end-of-file condition.
